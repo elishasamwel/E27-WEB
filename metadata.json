@@ -1,0 +1,6 @@
+{
+  "name": "E27 - Online & Digital Services",
+  "description": "E27 is your trusted partner for online and digital services in Tanzania — from RITA, TRA, BRELA, TAUSI, and NeST assistance to website design, hosting, domains, and IT solutions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
