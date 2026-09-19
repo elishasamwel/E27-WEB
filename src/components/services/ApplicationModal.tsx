@@ -1,17 +1,5 @@
-import { useState, useId, type ChangeEvent } from 'react';
-import {
-  X,
-  CheckCircle2,
-  UploadCloud,
-  FileText,
-  AlertCircle,
-  ArrowRight,
-  ArrowLeft,
-  Trash2,
-  ShieldAlert,
-  Sparkles,
-  Info
-} from 'lucide-react';
+import { useState, type FormEvent } from 'react';
+import { X, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { ServiceItem, Language, ServiceApplication } from '../../types';
 import { translations } from '../../translations';
 import { submitApplication } from '../../services/storage';
@@ -30,871 +18,771 @@ export function ApplicationModal({
   onSuccess,
 }: ApplicationModalProps) {
   const t = translations[currentLang];
-  const [currentStep, setCurrentStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Step 1: Personal & Contact Information
-  const [personalInfo, setPersonalInfo] = useState({
-    fullName: '',
-    phone: '',
-    whatsApp: '',
-    email: '',
-    address: '',
-    notes: '',
-  });
+  // Common contact info
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [notes, setNotes] = useState('');
 
-  // Step 2: Service Specific Form State
-  const [serviceDetails, setServiceDetails] = useState<Record<string, any>>({});
+  // Service specific state
+  const [customFields, setCustomFields] = useState<Record<string, string>>({});
 
-  // Step 3: Uploaded Documents (simulated file storage with previews)
-  const [documents, setDocuments] = useState<
-    Array<{ name: string; size: number; type: string; dataUrl?: string }>
-  >([]);
-
-  // Step 4: Agreement
-  const [agreed, setAgreed] = useState(true);
-
-  const fileInputId = useId();
-
-  // Helper to update specific service field
-  const handleServiceDetailChange = (field: string, value: any) => {
-    setServiceDetails((prev) => ({ ...prev, [field]: value }));
+  const handleCustomChange = (key: string, value: string) => {
+    setCustomFields((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Document upload handler
-  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const newDocs: Array<{ name: string; size: number; type: string; dataUrl?: string }> = [];
-
-    Array.from(files).forEach((file: File) => {
-      // Validate file size: 10MB limit
-      if (file.size > 10 * 1024 * 1024) {
-        setErrorMessage(`File ${file.name} exceeds 10MB limit.`);
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        newDocs.push({
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          dataUrl: reader.result as string,
-        });
-        if (newDocs.length === files.length) {
-          setDocuments((prev) => [...prev, ...newDocs]);
-          setErrorMessage('');
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const removeDoc = (index: number) => {
-    setDocuments((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // Validation before step progress
-  const validateStep = (step: number): boolean => {
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
     setErrorMessage('');
-    if (step === 1) {
-      if (!personalInfo.fullName.trim()) {
-        setErrorMessage('Please enter your full legal name.');
-        return false;
-      }
-      if (!personalInfo.phone.trim()) {
-        setErrorMessage('Please enter a valid telephone number.');
-        return false;
-      }
-      if (!personalInfo.email.trim() || !personalInfo.email.includes('@')) {
-        setErrorMessage('Please enter a valid email address.');
-        return false;
-      }
-      if (!personalInfo.address.trim()) {
-        setErrorMessage('Please enter your location or address (e.g., Kigamboni, Dar es Salaam).');
-        return false;
-      }
-      return true;
+
+    if (!fullName.trim()) {
+      setErrorMessage('Please enter your full name or applicant name.');
+      return;
     }
-
-    if (step === 2) {
-      // Validate service specifics
-      if (service.code === 'rita_birth') {
-        if (!serviceDetails.dob || !serviceDetails.pob || !serviceDetails.fatherName || !serviceDetails.motherName) {
-          setErrorMessage('Please complete all required RITA fields: Date of Birth, Place of Birth, Father & Mother names.');
-          return false;
-        }
-      } else if (service.code === 'tra_tin') {
-        if (!serviceDetails.tinType || !serviceDetails.nidaNumber) {
-          setErrorMessage('Please select TIN category and enter your NIDA/National ID number.');
-          return false;
-        }
-      } else if (service.code === 'brela_reg') {
-        if (!serviceDetails.businessNames || !serviceDetails.businessType) {
-          setErrorMessage('Please provide proposed business name(s) and select the entity type.');
-          return false;
-        }
-      } else if (service.code === 'tausi_licence') {
-        if (!serviceDetails.businessName || !serviceDetails.licenceType) {
-          setErrorMessage('Please enter your business trade name and licence classification.');
-          return false;
-        }
-      } else if (service.code === 'nest_tender') {
-        if (!serviceDetails.companyName || !serviceDetails.tenderTitle) {
-          setErrorMessage('Please state your company name and the tender name or reference.');
-          return false;
-        }
-      } else if (service.code === 'web_design') {
-        if (!serviceDetails.projectType || !serviceDetails.desiredFeatures) {
-          setErrorMessage('Please specify your website type and required features.');
-          return false;
-        }
-      } else if (service.code === 'tz_domains') {
-        if (!serviceDetails.domainName) {
-          setErrorMessage('Please enter your desired domain name.');
-          return false;
-        }
-      }
-      return true;
-    }
-
-    if (step === 3) {
-      // Step 3: Documents are optional or recommended, so pass
-      return true;
-    }
-
-    return true;
-  };
-
-  const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep((prev) => Math.min(prev + 1, 4));
-    }
-  };
-
-  const handlePrev = () => {
-    setErrorMessage('');
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
-  };
-
-  const handleSubmit = () => {
-    if (!agreed) {
-      setErrorMessage('Please confirm authorization checkbox before submitting.');
+    if (!phone.trim()) {
+      setErrorMessage('Please enter your phone number.');
       return;
     }
 
     setIsSubmitting(true);
-    setErrorMessage('');
 
     try {
-      const app = submitApplication(
+      const newApp = submitApplication(
         service,
         {
-          fullName: personalInfo.fullName,
-          phone: personalInfo.phone,
-          whatsApp: personalInfo.whatsApp || personalInfo.phone,
-          email: personalInfo.email,
-          address: personalInfo.address,
+          fullName: fullName.trim(),
+          phone: phone.trim(),
+          whatsApp: phone.trim(),
+          email: email.trim(),
+          address: customFields.address || customFields.location || '',
         },
         {
-          ...serviceDetails,
-          generalNotes: personalInfo.notes,
+          ...customFields,
+          message: notes.trim(),
         },
-        documents
+        []
       );
 
       setTimeout(() => {
         setIsSubmitting(false);
-        onSuccess(app);
-      }, 500);
+        onSuccess(newApp);
+      }, 400);
     } catch (err: any) {
       setIsSubmitting(false);
-      setErrorMessage(err?.message || 'Failed to submit application. Please try again.');
+      setErrorMessage(err.message || 'Failed to submit application. Please try again.');
     }
   };
 
-  // Render Service Specific Fields (Step 2)
+  const serviceName = service.name[currentLang] || service.name.en;
+
+  // Render service-specific custom fields
   const renderServiceSpecificFields = () => {
     switch (service.code) {
       // 1. RITA Birth Certificate
       case 'rita_birth':
         return (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-900 text-xs text-blue-800 dark:text-blue-300 flex items-start gap-2">
-              <Info className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>
-                Please provide accurate birth facts exactly as recorded in clinic cards or hospital notifications.
-              </span>
+          <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
+              Birth Details (RITA)
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Application Type *
-                </label>
-                <select
-                  value={serviceDetails.applicationType || 'New Birth Certificate'}
-                  onChange={(e) => handleServiceDetailChange('applicationType', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="New Birth Certificate">New Birth Certificate (First-time)</option>
-                  <option value="Late Registration">Late Registration (Born over 10 years ago)</option>
-                  <option value="Verification of Existing Certificate">Verification of Existing Certificate</option>
-                  <option value="Correction / Amendment of Name">Correction / Amendment of Name</option>
-                  <option value="Certified True Copy">Certified True Copy</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Gender *
-                </label>
-                <select
-                  value={serviceDetails.gender || 'Male'}
-                  onChange={(e) => handleServiceDetailChange('gender', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                >
-                  <option value="Male">Male / Mwanamume</option>
-                  <option value="Female">Female / Mwanamke</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Date of Birth *
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Child's Date of Birth <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="date"
-                  value={serviceDetails.dob || ''}
-                  onChange={(e) => handleServiceDetailChange('dob', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                   required
+                  value={customFields.dateOfBirth || ''}
+                  onChange={(e) => handleCustomChange('dateOfBirth', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Place of Birth (Hospital / Clinic / Town) *
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Place of Birth (Hospital / District)
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., Temeke Hospital, Dar es Salaam"
-                  value={serviceDetails.pob || ''}
-                  onChange={(e) => handleServiceDetailChange('pob', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                  required
+                  placeholder="e.g., Amana Hospital, Ilala"
+                  value={customFields.placeOfBirth || ''}
+                  onChange={(e) => handleCustomChange('placeOfBirth', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
                 />
               </div>
-
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Father’s Full Name *
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Father's Full Name & NIDA
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., Bakari Juma Mtambo"
-                  value={serviceDetails.fatherName || ''}
-                  onChange={(e) => handleServiceDetailChange('fatherName', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                  required
+                  placeholder="Father's name and NIDA number"
+                  value={customFields.fatherDetails || ''}
+                  onChange={(e) => handleCustomChange('fatherDetails', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Mother’s Full Maiden Name *
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Mother's Full Name & NIDA
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., Zubeda Said Ally"
-                  value={serviceDetails.motherName || ''}
-                  onChange={(e) => handleServiceDetailChange('motherName', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                  required
+                  placeholder="Mother's name and NIDA number"
+                  value={customFields.motherDetails || ''}
+                  onChange={(e) => handleCustomChange('motherDetails', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
                 />
               </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Region of Residence *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., Dar es Salaam"
-                  value={serviceDetails.region || ''}
-                  onChange={(e) => handleServiceDetailChange('region', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  District & Ward *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., Kigamboni, Tuangoma"
-                  value={serviceDetails.districtWard || ''}
-                  onChange={(e) => handleServiceDetailChange('districtWard', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Clinic Card / Hospital Notification No.
+              </label>
+              <input
+                type="text"
+                placeholder="e.g., CLINIC-098234"
+                value={customFields.clinicCardNo || ''}
+                onChange={(e) => handleCustomChange('clinicCardNo', e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+              />
             </div>
           </div>
         );
 
-      // 2. TRA Services Form
+      // 2. RITA Death Certificate
+      case 'rita_death':
+        return (
+          <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
+              Deceased & Permit Details (RITA)
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Deceased Person's Full Name <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Full legal name"
+                  value={customFields.deceasedName || ''}
+                  onChange={(e) => handleCustomChange('deceasedName', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Date of Death <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={customFields.dateOfDeath || ''}
+                  onChange={(e) => handleCustomChange('dateOfDeath', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Place of Death (Hospital / Region)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Muhimbili, Dar es Salaam"
+                  value={customFields.placeOfDeath || ''}
+                  onChange={(e) => handleCustomChange('placeOfDeath', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Burial Permit / Cause of Death No.
+                </label>
+                <input
+                  type="text"
+                  placeholder="Permit number or reference"
+                  value={customFields.burialPermitNo || ''}
+                  onChange={(e) => handleCustomChange('burialPermitNo', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Relationship to Deceased
+              </label>
+              <input
+                type="text"
+                placeholder="e.g., Son, Daughter, Spouse, Executor"
+                value={customFields.relationship || ''}
+                onChange={(e) => handleCustomChange('relationship', e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+              />
+            </div>
+          </div>
+        );
+
+      // 3. TRA TIN Registration
       case 'tra_tin':
         return (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-900 text-xs text-emerald-800 dark:text-emerald-300 flex items-start gap-2">
-              <Info className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>
-                A valid NIDA National ID or NIDA verification number is mandatory for TRA Taxpayer Identification registration.
-              </span>
+          <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
+              TRA Taxpayer Portal Information
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  TIN Category *
-                </label>
-                <select
-                  value={serviceDetails.tinType || 'Individual TIN'}
-                  onChange={(e) => handleServiceDetailChange('tinType', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                >
-                  <option value="Individual TIN">Individual TIN (Personal use, driving license, bank)</option>
-                  <option value="Sole Proprietor Business TIN">Sole Proprietorship Business TIN</option>
-                  <option value="Company / Corporate TIN">Company / Corporate TIN</option>
-                  <option value="TIN Retrieval / Lost Certificate">TIN Certificate Retrieval / Reprint</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  NIDA Number (National ID) *
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  NIDA National ID Number <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., 19920815-11105-00001-22"
-                  value={serviceDetails.nidaNumber || ''}
-                  onChange={(e) => handleServiceDetailChange('nidaNumber', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
                   required
+                  placeholder="20-digit NIDA number"
+                  value={customFields.nidaNumber || ''}
+                  onChange={(e) => handleCustomChange('nidaNumber', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none font-mono"
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Business / Trading Name (If applicable)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., Rashid Logistics & Supplies"
-                  value={serviceDetails.businessName || ''}
-                  onChange={(e) => handleServiceDetailChange('businessName', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Preferred TRA Tax Office Location
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  TIN Category <span className="text-red-600">*</span>
                 </label>
                 <select
-                  value={serviceDetails.taxCenter || 'Temeke / Kigamboni'}
-                  onChange={(e) => handleServiceDetailChange('taxCenter', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  value={customFields.tinCategory || 'individual'}
+                  onChange={(e) => handleCustomChange('tinCategory', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
                 >
-                  <option value="Temeke / Kigamboni">Temeke / Kigamboni Branch (Dar es Salaam)</option>
-                  <option value="Ilala / Kariakoo">Ilala / Kariakoo Branch (Dar es Salaam)</option>
-                  <option value="Kinondoni">Kinondoni Branch (Dar es Salaam)</option>
-                  <option value="Samora Ave Main Office">Samora Ave / DIT Main Office</option>
-                  <option value="Other Regional Center">Other Regional Center in Tanzania</option>
+                  <option value="individual">Individual TIN (Personal/Employment/Driver)</option>
+                  <option value="business_sole">Business TIN (Sole Proprietor / Biashara)</option>
+                  <option value="company">Company / Corporate TIN (Limited Company)</option>
                 </select>
               </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Existing TIN Number (If retrieving or updating)
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Business / Trading Name (if applicable)
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., 100-234-567"
-                  value={serviceDetails.existingTin || ''}
-                  onChange={(e) => handleServiceDetailChange('existingTin', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                  placeholder="e.g., Kigamboni Fresh Supplies"
+                  value={customFields.businessName || ''}
+                  onChange={(e) => handleCustomChange('businessName', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Physical Premises (Region & District)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Dar es Salaam, Kigamboni, Tuangoma"
+                  value={customFields.location || ''}
+                  onChange={(e) => handleCustomChange('location', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
                 />
               </div>
             </div>
           </div>
         );
 
-      // 3. BRELA Form
-      case 'brela_reg':
-        return (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Entity Type to Register *
-                </label>
-                <select
-                  value={serviceDetails.businessType || 'Sole Proprietor Business Name'}
-                  onChange={(e) => handleServiceDetailChange('businessType', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                >
-                  <option value="Sole Proprietor Business Name">Business Name (Sole Proprietor / BN)</option>
-                  <option value="Partnership">Partnership Firm</option>
-                  <option value="Private Limited Company (Ltd)">Private Limited Company (Ltd / LLC)</option>
-                  <option value="Company Limited by Guarantee (NGO/Trust)">Company Limited by Guarantee / Non-Profit</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Proposed Business Name Options (in order of priority) *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Option 1, Option 2, Option 3"
-                  value={serviceDetails.businessNames || ''}
-                  onChange={(e) => handleServiceDetailChange('businessNames', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                  required
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Principal Business Activities / Scope *
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Describe your goods, services, or industry (e.g. General merchant, IT services, civil engineering, transport)..."
-                  value={serviceDetails.activities || ''}
-                  onChange={(e) => handleServiceDetailChange('activities', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Number of Directors / Owners
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={serviceDetails.directorCount || 1}
-                  onChange={(e) => handleServiceDetailChange('directorCount', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Registered Office Location (Plot / Street / Ward)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., South Beach Road, Kigamboni"
-                  value={serviceDetails.officeAddress || ''}
-                  onChange={(e) => handleServiceDetailChange('officeAddress', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-            </div>
-          </div>
-        );
-
-      // 4. TAUSI Licence Form
+      // 4. TAUSI Business Licence
       case 'tausi_licence':
         return (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
+              TAUSI Local Government Licence Info
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Registered Business Name *
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Registered Business Name <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., E27 Digital Hub"
-                  value={serviceDetails.businessName || ''}
-                  onChange={(e) => handleServiceDetailChange('businessName', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                   required
+                  placeholder="Exact registered business name"
+                  value={customFields.businessName || ''}
+                  onChange={(e) => handleCustomChange('businessName', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Licence Action *
-                </label>
-                <select
-                  value={serviceDetails.licenceType || 'New Business Licence'}
-                  onChange={(e) => handleServiceDetailChange('licenceType', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                >
-                  <option value="New Business Licence">New Municipal Business Licence</option>
-                  <option value="Annual Renewal">Annual Licence Renewal</option>
-                  <option value="Change of Premise / Relocation">Change of Premise / Relocation</option>
-                  <option value="Branch Licence">Additional Branch Licence</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Business Location / Local Municipal Council
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  TRA TIN Number <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., Kigamboni Municipal Council"
-                  value={serviceDetails.municipalCouncil || ''}
-                  onChange={(e) => handleServiceDetailChange('municipalCouncil', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  required
+                  placeholder="9-digit TIN number"
+                  value={customFields.tinNumber || ''}
+                  onChange={(e) => handleCustomChange('tinNumber', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none font-mono"
                 />
               </div>
-
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  TRA TIN Number of Business
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  BRELA Registration Number
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., 148-922-340"
-                  value={serviceDetails.businessTin || ''}
-                  onChange={(e) => handleServiceDetailChange('businessTin', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                  placeholder="e.g., BN-123456 or 154321"
+                  value={customFields.brelaNo || ''}
+                  onChange={(e) => handleCustomChange('brelaNo', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none font-mono"
                 />
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Municipal Council & Ward
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Kigamboni MC, Vijibweni Ward"
+                  value={customFields.councilWard || ''}
+                  onChange={(e) => handleCustomChange('councilWard', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Business Activity / Sector
+              </label>
+              <input
+                type="text"
+                placeholder="e.g., Pharmacy, Retail Shop, Hardware, Consultancy"
+                value={customFields.businessSector || ''}
+                onChange={(e) => handleCustomChange('businessSector', e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+              />
             </div>
           </div>
         );
 
-      // 5. NeST Tender Form
+      // 5. BRELA Registration
+      case 'brela_reg':
+        return (
+          <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
+              BRELA Name & Incorporation Choices
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Entity Type to Register <span className="text-red-600">*</span>
+              </label>
+              <select
+                value={customFields.entityType || 'sole_proprietor'}
+                onChange={(e) => handleCustomChange('entityType', e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+              >
+                <option value="sole_proprietor">Sole Proprietorship (Business Name / Jina la Biashara)</option>
+                <option value="limited_company">Private Limited Company (Ltd / Kampuni)</option>
+                <option value="partnership">Partnership Entity (Ubia)</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                3 Proposed Names in order of preference <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="Choice 1: Primary Preferred Name"
+                value={customFields.nameChoice1 || ''}
+                onChange={(e) => handleCustomChange('nameChoice1', e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+              />
+              <input
+                type="text"
+                placeholder="Choice 2: Alternative Name"
+                value={customFields.nameChoice2 || ''}
+                onChange={(e) => handleCustomChange('nameChoice2', e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+              />
+              <input
+                type="text"
+                placeholder="Choice 3: Fallback Name"
+                value={customFields.nameChoice3 || ''}
+                onChange={(e) => handleCustomChange('nameChoice3', e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Core Objectives / Line of Business
+              </label>
+              <input
+                type="text"
+                placeholder="e.g., General Supply, Construction, IT Services, Agriculture"
+                value={customFields.businessObjectives || ''}
+                onChange={(e) => handleCustomChange('businessObjectives', e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+              />
+            </div>
+          </div>
+        );
+
+      // 6. NeST Tenders
       case 'nest_tender':
         return (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
+              NeST Procurement Portal Information
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Company / Bidding Entity Name *
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Company Legal Name <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., Simba Engineering Ltd"
-                  value={serviceDetails.companyName || ''}
-                  onChange={(e) => handleServiceDetailChange('companyName', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                   required
+                  placeholder="Registered company name"
+                  value={customFields.companyName || ''}
+                  onChange={(e) => handleCustomChange('companyName', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Tender Number / Reference *
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  NeST Vendor ID (or "New Registration")
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., VENDOR-7821 or New"
+                  value={customFields.nestVendorId || ''}
+                  onChange={(e) => handleCustomChange('nestVendorId', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none font-mono"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Tender Reference / Notice Number
                 </label>
                 <input
                   type="text"
                   placeholder="e.g., PA/001/2026/HQ/G/01"
-                  value={serviceDetails.tenderTitle || ''}
-                  onChange={(e) => handleServiceDetailChange('tenderTitle', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
-                  required
+                  value={customFields.tenderRef || ''}
+                  onChange={(e) => handleCustomChange('tenderRef', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none font-mono"
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Procuring Entity / Ministry
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Procuring Entity (Ministry / Agency)
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., TANROADS, TPDC, Ministry of Health"
-                  value={serviceDetails.procuringEntity || ''}
-                  onChange={(e) => handleServiceDetailChange('procuringEntity', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Submission Deadline Date
-                </label>
-                <input
-                  type="date"
-                  value={serviceDetails.submissionDeadline || ''}
-                  onChange={(e) => handleServiceDetailChange('submissionDeadline', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  placeholder="e.g., TANROADS, TANESCO, Ministry of Health"
+                  value={customFields.procuringEntity || ''}
+                  onChange={(e) => handleCustomChange('procuringEntity', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
                 />
               </div>
             </div>
           </div>
         );
 
-      // 6. Website Design Form
-      case 'web_design':
+      // 7. Online Jobs & PSRS
+      case 'online_jobs':
         return (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
+              Employment & PSRS Application Details
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Website Type *
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  NIDA National ID Number <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="20-digit NIDA number"
+                  value={customFields.nidaNumber || ''}
+                  onChange={(e) => handleCustomChange('nidaNumber', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Target Portal / Employer
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., PSRS (Utumishi) / Private Bank"
+                  value={customFields.targetPortal || ''}
+                  onChange={(e) => handleCustomChange('targetPortal', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Job Vacancy Title
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Accountant II, Records Officer"
+                  value={customFields.jobTitle || ''}
+                  onChange={(e) => handleCustomChange('jobTitle', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Highest Qualification Level
                 </label>
                 <select
-                  value={serviceDetails.projectType || 'Corporate Business Website'}
-                  onChange={(e) => handleServiceDetailChange('projectType', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  value={customFields.educationLevel || 'degree'}
+                  onChange={(e) => handleCustomChange('educationLevel', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
                 >
-                  <option value="Corporate Business Website">Corporate / Business Website</option>
-                  <option value="E-commerce Store">E-commerce Online Shop (M-Pesa/Cards)</option>
-                  <option value="NGO / Non-Profit Portal">NGO / Institutional Portal</option>
-                  <option value="Personal Portfolio">Personal Brand / Portfolio</option>
-                  <option value="Custom Web Application">Custom Web Application / System</option>
+                  <option value="degree">Bachelor's Degree</option>
+                  <option value="diploma">Ordinary Diploma</option>
+                  <option value="masters">Master's Degree</option>
+                  <option value="certificate">Certificate / Form IV/VI</option>
                 </select>
               </div>
+            </div>
+          </div>
+        );
 
+      // 8. College & University Admissions
+      case 'online_college':
+        return (
+          <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
+              Admissions & TCU/NACTE Index Numbers
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Preferred Domain Name
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Form IV (CSEE) Index No. <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g., S0101/0001/2021"
+                  value={customFields.form4Index || ''}
+                  onChange={(e) => handleCustomChange('form4Index', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Form VI (ACSEE) or Diploma No.
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., S0101/0501/2023"
+                  value={customFields.form6Index || ''}
+                  onChange={(e) => handleCustomChange('form6Index', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none font-mono"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Preferred University / College
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., UDSM, UDOM, CBE, IFM"
+                  value={customFields.preferredCollege || ''}
+                  onChange={(e) => handleCustomChange('preferredCollege', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Apply for HESLB Loan?
+                </label>
+                <select
+                  value={customFields.heslbNeeded || 'yes'}
+                  onChange={(e) => handleCustomChange('heslbNeeded', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+                >
+                  <option value="yes">Yes, include HESLB loan application</option>
+                  <option value="no">No, admissions only</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        );
+
+      // 9. Website Design
+      case 'web_design':
+        return (
+          <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
+              Website Project Specifications
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Website Archetype / Purpose <span className="text-red-600">*</span>
+                </label>
+                <select
+                  value={customFields.webType || 'corporate'}
+                  onChange={(e) => handleCustomChange('webType', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+                >
+                  <option value="corporate">Corporate Business Website</option>
+                  <option value="ecommerce">E-Commerce / Online Store</option>
+                  <option value="ngo">NGO / Non-Profit Institution</option>
+                  <option value="portfolio">Portfolio / Personal Brand</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Desired Domain Name (if decided)
                 </label>
                 <input
                   type="text"
                   placeholder="e.g., mybusiness.co.tz"
-                  value={serviceDetails.preferredDomain || ''}
-                  onChange={(e) => handleServiceDetailChange('preferredDomain', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  value={customFields.desiredDomain || ''}
+                  onChange={(e) => handleCustomChange('desiredDomain', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none font-mono"
                 />
               </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Estimated Pages Needed
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., Home, About, Services, Gallery, Contact (5-7 pages)"
-                  value={serviceDetails.pagesRequired || ''}
-                  onChange={(e) => handleServiceDetailChange('pagesRequired', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Budget Estimate (TZS)
-                </label>
-                <select
-                  value={serviceDetails.budgetRange || '600,000 - 1,200,000 TZS'}
-                  onChange={(e) => handleServiceDetailChange('budgetRange', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                >
-                  <option value="400,000 - 800,000 TZS">400,000 - 800,000 TZS (Starter Website)</option>
-                  <option value="800,000 - 1,800,000 TZS">800,000 - 1,800,000 TZS (Standard Business)</option>
-                  <option value="1,800,000 - 4,000,000 TZS">1,800,000 - 4,000,000 TZS (E-commerce / Corporate)</option>
-                  <option value="4,000,000+ TZS">4,000,000+ TZS (Advanced Custom Web App)</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Required Features & Reference Websites *
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="List key features (e.g., WhatsApp chat button, quotation generator, contact forms, English/Swahili bilingual, reference links)..."
-                  value={serviceDetails.desiredFeatures || ''}
-                  onChange={(e) => handleServiceDetailChange('desiredFeatures', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                  required
-                />
-              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Key Features Required
+              </label>
+              <input
+                type="text"
+                placeholder="e.g., WhatsApp chat button, Mobile payments (M-Pesa), Product gallery, Contact form"
+                value={customFields.webFeatures || ''}
+                onChange={(e) => handleCustomChange('webFeatures', e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+              />
             </div>
           </div>
         );
 
-      // 7. Hosting Form
+      // 10. Web Hosting
       case 'web_hosting':
         return (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
+              Cloud Hosting Specifications
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Existing or Target Domain Name *
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Domain Name to Host <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., mycompany.co.tz"
-                  value={serviceDetails.domain || ''}
-                  onChange={(e) => handleServiceDetailChange('domain', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                   required
+                  placeholder="e.g., company.co.tz"
+                  value={customFields.domainToHost || ''}
+                  onChange={(e) => handleCustomChange('domainToHost', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none font-mono"
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Hosting Tier
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Hosting Tier Needed
                 </label>
                 <select
-                  value={serviceDetails.hostingTier || 'Business SSD (30GB)'}
-                  onChange={(e) => handleServiceDetailChange('hostingTier', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  value={customFields.hostingTier || 'business'}
+                  onChange={(e) => handleCustomChange('hostingTier', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
                 >
-                  <option value="Starter SSD (10GB)">Starter SSD (10GB, 5 Emails) - 150,000 TZS/yr</option>
-                  <option value="Business SSD (30GB)">Business SSD (30GB, Unlimited Emails) - 280,000 TZS/yr</option>
-                  <option value="Enterprise High-Traffic">Enterprise Cloud (100GB NVMe) - 550,000 TZS/yr</option>
+                  <option value="starter">Starter SSD (10 GB, 5 Emails)</option>
+                  <option value="business">Business Cloud (30 GB, Unlimited Emails)</option>
+                  <option value="enterprise">Enterprise Cloud (Unlimited SSD, Dedicated IP)</option>
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Do you need migration from previous host?
-                </label>
-                <select
-                  value={serviceDetails.migrationNeeded || 'No, Fresh Setup'}
-                  onChange={(e) => handleServiceDetailChange('migrationNeeded', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                >
-                  <option value="No, Fresh Setup">No, Fresh Website Setup</option>
-                  <option value="Yes, Migrate Existing cPanel">Yes, Migrate from existing host (Free by E27)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Number of Business Email Accounts Needed
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., 5 accounts (info@, sales@, hr@)"
-                  value={serviceDetails.emailAccounts || ''}
-                  onChange={(e) => handleServiceDetailChange('emailAccounts', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
               </div>
             </div>
           </div>
         );
 
-      // 8. Tanzania Domain Form
+      // 11. Tanzania Local Domains (.co.tz)
       case 'tz_domains':
         return (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
+              Tanzania tzNIC Domain Registration
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Desired Domain Name (without extension) *
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Preferred Domain Name <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., mybrand"
-                  value={serviceDetails.domainName || ''}
-                  onChange={(e) => handleServiceDetailChange('domainName', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
                   required
+                  placeholder="e.g., yourname.co.tz"
+                  value={customFields.domainName || ''}
+                  onChange={(e) => handleCustomChange('domainName', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none font-mono"
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Extension *
-                </label>
-                <select
-                  value={serviceDetails.domainExtension || '.co.tz'}
-                  onChange={(e) => handleServiceDetailChange('domainExtension', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
-                >
-                  <option value=".co.tz">.co.tz (Tanzania Commercial Businesses)</option>
-                  <option value=".or.tz">.or.tz (Organizations & NGOs)</option>
-                  <option value=".ac.tz">.ac.tz (Colleges & Academic Institutions)</option>
-                  <option value=".tz">.tz (Top Level Tanzania Direct)</option>
-                  <option value=".com">.com (Global Commercial)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Registrant Name / Company Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., E27 Technologies Ltd"
-                  value={serviceDetails.registrantName || ''}
-                  onChange={(e) => handleServiceDetailChange('registrantName', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                   Registration Period
                 </label>
                 <select
-                  value={serviceDetails.regDuration || '1 Year'}
-                  onChange={(e) => handleServiceDetailChange('regDuration', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  value={customFields.registrationDuration || '1_year'}
+                  onChange={(e) => handleCustomChange('registrationDuration', e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
                 >
-                  <option value="1 Year">1 Year</option>
-                  <option value="2 Years">2 Years</option>
-                  <option value="3 Years">3 Years</option>
-                  <option value="5 Years">5 Years</option>
+                  <option value="1_year">1 Year</option>
+                  <option value="2_years">2 Years (Discounted)</option>
+                  <option value="5_years">5 Years</option>
                 </select>
               </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Registrant Organization / Person
+              </label>
+              <input
+                type="text"
+                placeholder="Official owner name in registry"
+                value={customFields.registrantName || ''}
+                onChange={(e) => handleCustomChange('registrantName', e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+              />
             </div>
           </div>
         );
 
-      // Default fallback for other online applications
+      // Default fallback
       default:
         return (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Institution / Portal / Organization *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., Utumishi (PSRS), TCU, University of Dar es Salaam"
-                  value={serviceDetails.institution || ''}
-                  onChange={(e) => handleServiceDetailChange('institution', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Position / Course / Application Goal *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., Public Sector Accountant Job / Bachelor of Science"
-                  value={serviceDetails.targetGoal || ''}
-                  onChange={(e) => handleServiceDetailChange('targetGoal', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                  required
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Specific Instructions / Portal Logins (if account already exists)
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Provide any application guidelines, registration numbers, index numbers, or key notes..."
-                  value={serviceDetails.specialInstructions || ''}
-                  onChange={(e) => handleServiceDetailChange('specialInstructions', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
+          <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Service Requirements / Specific Needs
+              </label>
+              <input
+                type="text"
+                placeholder="Provide any key references or identification numbers..."
+                value={customFields.specificNeed || ''}
+                onChange={(e) => handleCustomChange('specificNeed', e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none"
+              />
             </div>
           </div>
         );
@@ -903,407 +791,150 @@ export function ApplicationModal({
 
   return (
     <div
-      id="application-modal-overlay"
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150"
+      id="application-modal"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
     >
-      <div
-        id="application-modal-card"
-        className="relative w-full max-w-3xl rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-6"
-      >
+      <div className="relative w-full max-w-2xl bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden text-gray-900 dark:text-white transition-colors max-h-[92vh] flex flex-col">
         {/* Modal Header */}
-        <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900 text-white p-5 sm:p-6 flex items-start justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-white/20 text-cyan-200">
-                Custom Service Application
-              </span>
-              <span className="text-xs text-blue-200 font-medium">Est. {service.estimatedTime}</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
-              {service.name[currentLang] || service.name.en}
+        <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800 shrink-0">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
+              Apply For Service
+            </span>
+            <h2 className="text-xl font-black text-gray-900 dark:text-white">
+              {serviceName}
             </h2>
-            <p className="text-xs text-blue-100 max-w-xl">
-              {service.shortDesc[currentLang] || service.shortDesc.en}
-            </p>
           </div>
-
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-2 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Step Progress Bar */}
-        <div className="px-6 pt-5 pb-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
-            <span className={currentStep >= 1 ? 'text-blue-600 dark:text-cyan-400 font-bold' : ''}>
-              1. Personal Info
-            </span>
-            <span className={currentStep >= 2 ? 'text-blue-600 dark:text-cyan-400 font-bold' : ''}>
-              2. Service Details
-            </span>
-            <span className={currentStep >= 3 ? 'text-blue-600 dark:text-cyan-400 font-bold' : ''}>
-              3. Documents
-            </span>
-            <span className={currentStep >= 4 ? 'text-blue-600 dark:text-cyan-400 font-bold' : ''}>
-              4. Review & Submit
-            </span>
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 flex-1">
+          {errorMessage && (
+            <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-400 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
+          {/* Section 1: Applicant Primary Contact */}
+          <div className="space-y-4">
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">
+              Applicant Contact Details
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="app-full-name"
+                  className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Full Name / Contact Person <span className="text-red-600">*</span>
+                </label>
+                <input
+                  id="app-full-name"
+                  type="text"
+                  required
+                  placeholder="e.g., Juma Rashidi Hamisi"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none placeholder:text-gray-400"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="app-phone"
+                  className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Phone Number (WhatsApp) <span className="text-red-600">*</span>
+                </label>
+                <input
+                  id="app-phone"
+                  type="tel"
+                  required
+                  placeholder="e.g., +255 750 272 727"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none placeholder:text-gray-400"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="app-email"
+                className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Email Address
+              </label>
+              <input
+                id="app-email"
+                type="email"
+                placeholder="e.g., info@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none placeholder:text-gray-400"
+              />
+            </div>
           </div>
 
-          {/* Progress Bar Line */}
-          <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 transition-all duration-300"
-              style={{ width: `${(currentStep / 4) * 100}%` }}
+          {/* Section 2: Service-Specific Custom Fields */}
+          {renderServiceSpecificFields()}
+
+          {/* Section 3: Message / Additional Notes */}
+          <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+            <label
+              htmlFor="app-message"
+              className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Additional Message or Specific Instructions
+            </label>
+            <textarea
+              id="app-message"
+              rows={3}
+              placeholder="Any additional details, urgent requests, or documents to note..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-red-600 focus:outline-none placeholder:text-gray-400 resize-none"
             />
           </div>
-        </div>
 
-        {/* Error Notification Bar */}
-        {errorMessage && (
-          <div className="mx-6 mt-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
-        {/* Modal Form Content */}
-        <div className="p-6 max-h-[60vh] overflow-y-auto space-y-6">
-          {/* STEP 1: Personal Information */}
-          {currentStep === 1 && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span>{t.form.personalInfo}</span>
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {t.form.fullName} *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g., Amani Bakari Mtambo"
-                    value={personalInfo.fullName}
-                    onChange={(e) => setPersonalInfo({ ...personalInfo, fullName: e.target.value })}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {t.form.phone} *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="e.g., +255 712 345 678"
-                    value={personalInfo.phone}
-                    onChange={(e) => setPersonalInfo({ ...personalInfo, phone: e.target.value })}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {t.form.whatsApp}
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="e.g., +255 712 345 678"
-                    value={personalInfo.whatsApp}
-                    onChange={(e) => setPersonalInfo({ ...personalInfo, whatsApp: e.target.value })}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {t.form.email} *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="e.g., amani@example.com"
-                    value={personalInfo.email}
-                    onChange={(e) => setPersonalInfo({ ...personalInfo, email: e.target.value })}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {t.form.address} *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g., Kigamboni, Tuangoma, Dar es Salaam"
-                    value={personalInfo.address}
-                    onChange={(e) => setPersonalInfo({ ...personalInfo, address: e.target.value })}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 2: Service Specific Details */}
-          {currentStep === 2 && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  {t.form.serviceDetails}
-                </h3>
-                <span className="text-xs text-slate-500">Service: {service.code}</span>
-              </div>
-              {renderServiceSpecificFields()}
-            </div>
-          )}
-
-          {/* STEP 3: Supporting Documents */}
-          {currentStep === 3 && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                {t.form.supportingDocs}
-              </h3>
-
-              {/* Required documents hints for this specific service */}
-              {service.requirements && (
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-2">
-                    Recommended Checklist for {service.name[currentLang] || service.name.en}:
-                  </span>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700 dark:text-slate-300">
-                    {(service.requirements?.[currentLang] || service.requirements?.en || []).map((req, i) => (
-                      <li key={i} className="flex items-start gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                        <span>{req}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Drag and Drop Uploader Box */}
-              <div className="relative border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-cyan-400 rounded-2xl p-6 text-center bg-white dark:bg-slate-900 transition-colors">
-                <input
-                  id={fileInputId}
-                  type="file"
-                  multiple
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                  onChange={handleFileUpload}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                <div className="space-y-2 pointer-events-none">
-                  <div className="w-12 h-12 mx-auto rounded-full bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-cyan-400">
-                    <UploadCloud className="w-6 h-6" />
-                  </div>
-                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    Click to browse or drag and drop files here
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    {t.form.uploadInstructions}
-                  </p>
-                </div>
-              </div>
-
-              {/* Uploaded Documents List */}
-              {documents.length > 0 && (
-                <div className="space-y-2 pt-2">
-                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                    Uploaded Files ({documents.length}):
-                  </span>
-                  <div className="grid grid-cols-1 gap-2">
-                    {documents.map((doc, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs"
-                      >
-                        <div className="flex items-center gap-2.5 truncate">
-                          <FileText className="w-4 h-4 text-blue-600 shrink-0" />
-                          <span className="font-medium text-slate-800 dark:text-slate-200 truncate">
-                            {doc.name}
-                          </span>
-                          <span className="text-slate-400">
-                            ({(doc.size / 1024).toFixed(0)} KB)
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => removeDoc(idx)}
-                          className="p-1 text-slate-400 hover:text-rose-500 transition-colors"
-                          title="Remove file"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* STEP 4: Review and Submit */}
-          {currentStep === 4 && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                {t.form.reviewSubmit}
-              </h3>
-
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-xs space-y-3">
-                <div className="grid grid-cols-2 gap-2 border-b border-slate-200 dark:border-slate-700 pb-3">
-                  <div>
-                    <span className="text-slate-400 block">Service</span>
-                    <span className="font-bold text-slate-900 dark:text-white text-sm">
-                      {service.name[currentLang] || service.name.en}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block">Applicant</span>
-                    <span className="font-bold text-slate-900 dark:text-white text-sm">
-                      {personalInfo.fullName}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block">Contact Phone</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {personalInfo.phone}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block">Email Address</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {personalInfo.email}
-                    </span>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-slate-400 block">Location / Address</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {personalInfo.address}
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-slate-400 block mb-1">Service Details Provided</span>
-                  <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 space-y-1 font-mono text-[11px]">
-                    {Object.entries(serviceDetails).length === 0 ? (
-                      <span className="text-slate-400 italic">No custom attributes entered.</span>
-                    ) : (
-                      Object.entries(serviceDetails).map(([key, val]) => (
-                        <div key={key} className="flex justify-between gap-2">
-                          <span className="text-slate-400">{key}:</span>
-                          <span className="font-medium text-slate-800 dark:text-slate-200 text-right truncate">
-                            {String(val)}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-slate-400 block">Attached Documents</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">
-                    {documents.length > 0 ? `${documents.length} files attached` : 'None attached'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Additional Notes Box */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Additional Notes or Instructions for E27 Staff
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Any special deadlines, urgency, or notes..."
-                  value={personalInfo.notes}
-                  onChange={(e) => setPersonalInfo({ ...personalInfo, notes: e.target.value })}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              {/* Authorization agreement */}
-              <div className="flex items-start gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="agree-checkbox"
-                  checked={agreed}
-                  onChange={(e) => setAgreed(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-                />
-                <label
-                  htmlFor="agree-checkbox"
-                  className="text-xs text-slate-600 dark:text-slate-400 leading-snug cursor-pointer select-none"
-                >
-                  {t.form.agreement}
-                </label>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Modal Footer Controls */}
-        <div className="p-4 sm:p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
-          <div>
-            {currentStep > 1 && (
-              <button
-                type="button"
-                onClick={handlePrev}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>{t.actions.prev}</span>
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
+          {/* Footer Controls: Centered / Clean */}
+          <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-center gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-colors"
+              className="px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
-              {t.actions.cancel}
+              {t.actions.cancel || 'Cancel'}
             </button>
 
-            {currentStep < 4 ? (
-              <button
-                type="button"
-                onClick={handleNext}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 transition-all"
-              >
-                <span>{t.actions.next}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={handleSubmit}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs tracking-wide shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <>
-                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Processing Application...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
-                    <span>{t.actions.submit}</span>
-                  </>
-                )}
-              </button>
-            )}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-7 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs tracking-wide shadow-md shadow-red-600/20 transition-all inline-flex items-center justify-center gap-2 disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Submitting...</span>
+                </>
+              ) : (
+                <>
+                  <span>Submit Application</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

@@ -1,6 +1,5 @@
-import React, { useState, useId, type FormEvent } from 'react';
+import { useState, useId, type FormEvent } from 'react';
 import {
-  MapPin,
   Phone,
   Mail,
   MessageCircle,
@@ -9,9 +8,7 @@ import {
   CheckCircle2,
   AlertCircle,
   ShieldCheck,
-  Building,
-  Sparkles,
-  ExternalLink
+  MapPin
 } from 'lucide-react';
 import { Language } from '../../types';
 import { translations } from '../../translations';
@@ -66,62 +63,60 @@ export function ContactPage({ currentLang }: ContactPageProps) {
         subject: 'General Inquiries',
         message: '',
       });
-      setTimeout(() => setIsSuccess(false), 6000);
     } catch (err: any) {
-      setErrorMsg('Failed to send message. Please try again.');
+      setErrorMsg('Failed to send message. Please try WhatsApp directly.');
     }
   };
 
   return (
     <div id="contact-page-container" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
-      {/* Header */}
+      {/* Page Header */}
       <div className="text-center max-w-3xl mx-auto space-y-4">
-        <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-cyan-400">
-          Get in Touch
+        <span className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
+          Contact Us
         </span>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
-          {t.contact?.title || 'Contact E27 Digital Services'}
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 dark:text-white tracking-tight">
+          {t.contact?.title || 'Get in Touch with E27'}
         </h1>
-        <p className="text-base text-slate-600 dark:text-slate-300">
-          {t.contact?.subtitle || 'Have questions about RITA, TRA TIN, BRELA, or Web Design? Reach our Kigamboni team directly.'}
+        <p className="text-base text-gray-600 dark:text-gray-300 leading-relaxed">
+          {t.contact?.subtitle || 'Visit our office in Kigamboni, call, WhatsApp, or send us a message online.'}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Contact Info Cards (Left) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Information Card */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Office Card */}
-          <div className="p-6 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-6">
+          <div className="rounded-3xl bg-gray-950 text-white p-8 border border-gray-800 shadow-xl space-y-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-blue-600/30 border border-blue-500/40 text-cyan-400 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-red-600/20 text-red-500 flex items-center justify-center">
                 <MapPin className="w-6 h-6" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white">Kigamboni Office</h3>
-                <p className="text-xs text-slate-400">{settings.location}</p>
+                <p className="text-xs text-gray-400">{settings.location}</p>
               </div>
             </div>
 
-            <div className="space-y-4 text-xs pt-4 border-t border-slate-800">
+            <div className="space-y-4 text-xs pt-4 border-t border-gray-800">
               <div className="flex items-start gap-3">
-                <Phone className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                <Phone className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                 <div>
-                  <span className="text-slate-400 block">Phone Support</span>
-                  <a href={`tel:${settings.phone}`} className="font-semibold text-white hover:text-cyan-300">
+                  <span className="text-gray-400 block">Phone Support</span>
+                  <a href={`tel:${settings.phone}`} className="font-semibold text-white hover:text-red-400">
                     {settings.phone}
                   </a>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <MessageCircle className="w-4 h-4 text-white shrink-0 mt-0.5" />
                 <div>
-                  <span className="text-slate-400 block">Direct WhatsApp Desk</span>
+                  <span className="text-gray-400 block">Direct WhatsApp Desk</span>
                   <a
                     href={`https://wa.me/${settings.whatsApp.replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="font-semibold text-emerald-300 hover:underline"
+                    className="font-semibold text-white hover:text-red-400 hover:underline"
                   >
                     {settings.whatsApp} (Quickest Reply)
                   </a>
@@ -129,30 +124,30 @@ export function ContactPage({ currentLang }: ContactPageProps) {
               </div>
 
               <div className="flex items-start gap-3">
-                <Mail className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                <Mail className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="text-slate-400 block">Email Inquiries</span>
-                  <a href={`mailto:${settings.email}`} className="font-semibold text-white hover:text-cyan-300">
+                  <span className="text-gray-400 block">Email Inquiries</span>
+                  <a href={`mailto:${settings.email}`} className="font-semibold text-white hover:text-red-400">
                     {settings.email}
                   </a>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <Clock className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="text-slate-400 block">Working Hours</span>
-                  <span className="font-semibold text-slate-200">{settings.officeHours}</span>
+                  <span className="text-gray-400 block">Working Hours</span>
+                  <span className="font-semibold text-gray-200">{settings.officeHours}</span>
                 </div>
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-2 flex justify-center">
               <a
                 href={`https://wa.me/${settings.whatsApp.replace(/[^0-9]/g, '')}?text=Hello%20E27,%20I%20am%20reaching%20out%20via%20your%20website%20contact%20page.`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs tracking-wider uppercase transition-all shadow-md shadow-emerald-600/20"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs tracking-wider uppercase transition-all shadow-md shadow-red-600/20"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span>Start WhatsApp Chat</span>
@@ -161,10 +156,10 @@ export function ContactPage({ currentLang }: ContactPageProps) {
           </div>
 
           {/* Independent disclaimer card */}
-          <div className="p-5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-900 dark:text-blue-300 flex items-start gap-3">
-            <ShieldCheck className="w-5 h-5 text-blue-600 dark:text-cyan-400 shrink-0 mt-0.5" />
+          <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs text-gray-700 dark:text-gray-300 flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-red-600 dark:text-red-500 shrink-0 mt-0.5" />
             <div>
-              <strong className="block mb-1">Independent Digital Facilitator:</strong>
+              <strong className="block mb-1 text-gray-900 dark:text-white">Independent Digital Facilitator:</strong>
               <span>{t.disclaimer.short}</span>
             </div>
           </div>
@@ -172,19 +167,19 @@ export function ContactPage({ currentLang }: ContactPageProps) {
 
         {/* Contact Form (Right) */}
         <div className="lg:col-span-7">
-          <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md space-y-6">
+          <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-md space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 Send Us a Message
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Fill in the form below and our team in Kigamboni will respond within 2 to 4 business hours.
               </p>
             </div>
 
             {isSuccess && (
-              <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-red-600 shrink-0" />
                 <span>
                   Thank you! Your inquiry has been sent to our customer care desk. We will respond via phone, WhatsApp, or email shortly.
                 </span>
@@ -192,7 +187,7 @@ export function ContactPage({ currentLang }: ContactPageProps) {
             )}
 
             {errorMsg && (
-              <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+              <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
@@ -203,7 +198,7 @@ export function ContactPage({ currentLang }: ContactPageProps) {
                 <div>
                   <label
                     htmlFor={nameId}
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
+                    className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
                   >
                     Full Name *
                   </label>
@@ -214,14 +209,14 @@ export function ContactPage({ currentLang }: ContactPageProps) {
                     placeholder="e.g., Juma Ally Mussa"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-600 focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor={phoneId}
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
+                    className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
                   >
                     Phone / WhatsApp Number
                   </label>
@@ -231,7 +226,7 @@ export function ContactPage({ currentLang }: ContactPageProps) {
                     placeholder="e.g., +255 750 272 727"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -240,7 +235,7 @@ export function ContactPage({ currentLang }: ContactPageProps) {
                 <div>
                   <label
                     htmlFor={emailId}
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
+                    className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
                   >
                     Email Address *
                   </label>
@@ -251,14 +246,14 @@ export function ContactPage({ currentLang }: ContactPageProps) {
                     placeholder="e.g., juma@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-600 focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor={subjectId}
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
+                    className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
                   >
                     Service Interested In
                   </label>
@@ -266,7 +261,7 @@ export function ContactPage({ currentLang }: ContactPageProps) {
                     id={subjectId}
                     value={formData.subject}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-600 focus:outline-none"
                   >
                     <option value="General Inquiries">General Inquiries</option>
                     <option value="RITA Birth / Death Certificate">RITA Birth / Death Certificate</option>
@@ -284,7 +279,7 @@ export function ContactPage({ currentLang }: ContactPageProps) {
               <div>
                 <label
                   htmlFor={messageId}
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
+                  className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Your Message or Question *
                 </label>
@@ -295,14 +290,14 @@ export function ContactPage({ currentLang }: ContactPageProps) {
                   placeholder="Tell us what you would like to accomplish..."
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-600 focus:outline-none resize-none"
                 />
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 flex justify-center">
                 <button
                   type="submit"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-wider uppercase shadow-lg shadow-blue-500/20 transition-all"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs tracking-wider uppercase shadow-lg shadow-red-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Send className="w-4 h-4" />
                   <span>Send Message</span>

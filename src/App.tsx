@@ -1,14 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Language, ServiceItem, ServiceApplication } from './types';
-import { getServices, getBlogPosts, getSettings } from './services/storage';
+import { getServices, getSettings } from './services/storage';
 import { Header } from './components/common/Header';
 import { Footer } from './components/common/Footer';
 import { HomePage } from './components/home/HomePage';
 import { AboutPage } from './components/about/AboutPage';
 import { ServicesPage } from './components/services/ServicesPage';
-import { BlogPage } from './components/blog/BlogPage';
-import { BlogPostDetail } from './components/blog/BlogPostDetail';
-import { TrackApplicationPage } from './components/track/TrackApplicationPage';
 import { ContactPage } from './components/contact/ContactPage';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { ApplicationModal } from './components/services/ApplicationModal';
@@ -19,7 +16,6 @@ import { MessageCircle, ArrowUp } from 'lucide-react';
 export default function App() {
   // Navigation State
   const [activePage, setActivePage] = useState<string>('home');
-  const [selectedPostSlug, setSelectedPostSlug] = useState<string | null>(null);
   const [trackRefId, setTrackRefId] = useState<string>('');
 
   // Language State
@@ -48,12 +44,10 @@ export default function App() {
   // Settings & Storage
   const settings = getSettings();
   const allServices = getServices();
-  const allPosts = getBlogPosts();
 
   // Scroll to top on page change
   const navigateTo = (page: string) => {
     setActivePage(page);
-    setSelectedPostSlug(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -96,20 +90,6 @@ export default function App() {
 
   // Render current view
   const renderContent = () => {
-    // If viewing a specific blog post
-    if (activePage === 'blog' && selectedPostSlug) {
-      const post = allPosts.find((p) => p.slug === selectedPostSlug);
-      if (post) {
-        return (
-          <BlogPostDetail
-            post={post}
-            currentLang={currentLang}
-            onBack={() => setSelectedPostSlug(null)}
-          />
-        );
-      }
-    }
-
     switch (activePage) {
       case 'home':
         return (
@@ -117,12 +97,8 @@ export default function App() {
             currentLang={currentLang}
             onNavigate={navigateTo}
             onSelectServiceToApply={(srv) => setServiceToApply(srv)}
-            onSelectServiceToView={(srv) => setServiceToView(srv)}
-            onSelectPost={(slug) => {
-              setSelectedPostSlug(slug);
-              setActivePage('blog');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
+            onSelectServiceToView={(srv) => setServiceToApply(srv)}
+            onSelectPost={() => {}}
           />
         );
 
@@ -134,27 +110,7 @@ export default function App() {
           <ServicesPage
             currentLang={currentLang}
             onApply={(srv) => setServiceToApply(srv)}
-            onViewDetails={(srv) => setServiceToView(srv)}
-          />
-        );
-
-      case 'blog':
-        return (
-          <BlogPage
-            currentLang={currentLang}
-            onSelectPost={(slug) => {
-              setSelectedPostSlug(slug);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-          />
-        );
-
-      case 'track':
-        return (
-          <TrackApplicationPage
-            currentLang={currentLang}
-            initialRefId={trackRefId}
-            onNavigate={navigateTo}
+            onViewDetails={(srv) => setServiceToApply(srv)}
           />
         );
 
@@ -175,18 +131,15 @@ export default function App() {
             currentLang={currentLang}
             onNavigate={navigateTo}
             onSelectServiceToApply={(srv) => setServiceToApply(srv)}
-            onSelectServiceToView={(srv) => setServiceToView(srv)}
-            onSelectPost={(slug) => {
-              setSelectedPostSlug(slug);
-              setActivePage('blog');
-            }}
+            onSelectServiceToView={(srv) => setServiceToApply(srv)}
+            onSelectPost={() => {}}
           />
         );
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col font-sans transition-colors duration-200">
       {/* Main Navigation Header */}
       <Header
         currentLang={currentLang}
@@ -219,18 +172,18 @@ export default function App() {
       {/* Floating Action Button: Quick WhatsApp Assistance */}
       <aside aria-label="Quick WhatsApp Consultation" className="fixed bottom-6 right-6 z-40">
         <a
-          href={`https://wa.me/${settings.whatsApp.replace(/[^0-9]/g, '')}?text=Hello%20E27,%20I%20need%20quick%20assistance%20with%20online%20services.`}
+          href={`https://wa.me/${settings.whatsApp.replace(/[^0-9]/g, '')}?text=Hello,%20I%20need%20quick%20assistance%20with%20online%20services.`}
           target="_blank"
           rel="noopener noreferrer"
-          className="group flex items-center gap-2 p-3 sm:px-4 sm:py-3 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-2xl shadow-emerald-700/50 hover:scale-105 transition-all duration-200"
-          title="Direct WhatsApp Consultation with E27 Kigamboni"
+          className="group flex items-center gap-2 p-3 sm:px-4 sm:py-3 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-2xl shadow-red-600/40 hover:scale-105 transition-all duration-200"
+          title="Direct WhatsApp Consultation"
         >
-          <MessageCircle className="w-5 h-5 text-white animate-bounce" />
-          <span className="hidden sm:inline">WhatsApp E27</span>
+          <MessageCircle className="w-5 h-5 text-white" />
+          <span className="hidden sm:inline">WhatsApp</span>
         </a>
       </aside>
 
-      {/* MODAL 1: Custom Multi-Step Service Application Form */}
+      {/* MODAL 1: Custom Service Application Form */}
       {serviceToApply && (
         <ApplicationModal
           service={serviceToApply}
@@ -262,10 +215,9 @@ export default function App() {
           application={submittedApp}
           currentLang={currentLang}
           onClose={() => setSubmittedApp(null)}
-          onTrack={(refId) => {
+          onTrack={() => {
             setSubmittedApp(null);
-            setTrackRefId(refId);
-            navigateTo('track');
+            navigateTo('services');
           }}
         />
       )}
