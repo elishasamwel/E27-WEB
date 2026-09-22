@@ -7,18 +7,25 @@ import {
   Search,
   Settings,
   Eye,
+  EyeOff,
   LogOut,
   Save,
   Download,
   Mail,
   ExternalLink,
-  Terminal
+  Terminal,
+  UserPlus,
+  ShieldCheck,
+  UserCheck,
+  RefreshCw,
+  Lock
 } from 'lucide-react';
 import {
   ServiceApplication,
   ApplicationStatus,
   WebsiteSettings,
-  Language
+  Language,
+  AdminUser
 } from '../../types';
 import {
   getApplications,
@@ -27,8 +34,11 @@ import {
   getSettings,
   saveSettings,
   isAdminLoggedIn,
-  setAdminLoggedIn,
-  logoutAdmin
+  getAdminUser,
+  registerAdminUser,
+  loginAdminUser,
+  logoutAdmin,
+  resetAdminAccount,
 } from '../../services/storage';
 import { StatusBadge } from '../common/StatusBadge';
 
@@ -38,9 +48,26 @@ interface AdminDashboardProps {
 }
 
 export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(getAdminUser());
   const [isAuthenticated, setIsAuthenticated] = useState(isAdminLoggedIn());
-  const [passwordInput, setPasswordInput] = useState('');
+  
+  // Auth view mode: default to 'register' if no admin exists, otherwise 'login'
+  const [authMode, setAuthMode] = useState<'login' | 'register'>(
+    getAdminUser() ? 'login' : 'register'
+  );
+
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState(adminUser?.email || '');
+  const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+
+  // Register form state
+  const [regEmail, setRegEmail] = useState('');
+  const [regName, setRegName] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
+  const [regError, setRegError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Active Tab: 'overview' | 'applications' | 'messages' | 'settings' | 'deployment'
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -66,6 +93,8 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
       setApplications(getApplications());
       setMessages(getContactMessages());
       setSettings(getSettings());
+      setAdminUser(getAdminUser());
+      setIsAuthenticated(isAdminLoggedIn());
     };
     window.addEventListener('e27_storage_updated', handleStorageUpdate);
     return () => window.removeEventListener('e27_storage_updated', handleStorageUpdate);
@@ -73,12 +102,43 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordInput === 'e27admin2026' || passwordInput === 'admin') {
-      setAdminLoggedIn(true);
+    setLoginError('');
+    const res = loginAdminUser(loginEmail, loginPassword);
+    if (res.success && res.user) {
+      setAdminUser(res.user);
       setIsAuthenticated(true);
       setLoginError('');
+      setLoginPassword('');
     } else {
-      setLoginError('Invalid administrator credentials. Try: "e27admin2026"');
+      setLoginError(res.error || 'Invalid administrator email or password.');
+    }
+  };
+
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegError('');
+    if (!regEmail.trim()) {
+      setRegError('Please provide a valid administrator email address.');
+      return;
+    }
+    if (regPassword.length < 6) {
+      setRegError('Password must be at least 6 characters long.');
+      return;
+    }
+    if (regPassword !== regConfirmPassword) {
+      setRegError('Passwords do not match. Please verify and re-type.');
+      return;
+    }
+
+    const res = registerAdminUser(regEmail, regPassword, regName);
+    if (res.success && res.user) {
+      setAdminUser(res.user);
+      setIsAuthenticated(true);
+      setRegError('');
+      setRegPassword('');
+      setRegConfirmPassword('');
+    } else {
+      setRegError(res.error || 'Failed to register administrator account.');
     }
   };
 
@@ -86,6 +146,25 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
     logoutAdmin();
     setIsAuthenticated(false);
     onNavigateHome();
+  };
+
+  const handleResetOrReRegister = () => {
+    if (
+      window.confirm(
+        'Are you sure you want to reset or re-register the administrator account? You will create new administrator credentials.'
+      )
+    ) {
+      resetAdminAccount();
+      setAdminUser(null);
+      setIsAuthenticated(false);
+      setAuthMode('register');
+      setRegEmail('');
+      setRegName('');
+      setRegPassword('');
+      setRegConfirmPassword('');
+      setLoginError('');
+      setRegError('');
+    }
   };
 
   // KPIs
@@ -128,55 +207,218 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
     setTimeout(() => setSettingsSavedToast(false), 4000);
   };
 
-  // If not authenticated, render Login Screen
+  // If not authenticated, render Login/Register Screen
   if (!isAuthenticated) {
     return (
-      <div id="admin-login-screen" className="min-h-[70vh] flex items-center justify-center px-4 py-16">
+      <div id="admin-login-screen" className="min-h-[75vh] flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-md p-8 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-6">
           <div className="text-center space-y-2">
             <div className="w-14 h-14 rounded-2xl bg-red-600 text-white font-mono font-black text-2xl flex items-center justify-center mx-auto shadow-lg shadow-red-600/20">
               E27
             </div>
             <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-              E27 Admin Portal
+              {authMode === 'register' ? 'Register Administrator' : 'E27 Admin Portal'}
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Authorized staff console. Enter master credentials to manage operations.
+              {authMode === 'register'
+                ? 'Register your administrator account using your email. There is no default password.'
+                : 'Sign in with your registered administrator email and password.'}
             </p>
           </div>
 
-          {loginError && (
-            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+          {/* Toggle between Login and Register if an admin already exists */}
+          {adminUser && (
+            <div className="flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1 border border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('login');
+                  setLoginError('');
+                  setRegError('');
+                }}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  authMode === 'login'
+                    ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('register');
+                  setLoginError('');
+                  setRegError('');
+                }}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  authMode === 'register'
+                    ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                Re-Register
+              </button>
+            </div>
+          )}
+
+          {/* Error messages */}
+          {authMode === 'login' && loginError && (
+            <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{loginError}</span>
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                Admin Security Password
-              </label>
-              <input
-                type="password"
-                required
-                placeholder="Enter password..."
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full px-4 py-3 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-600 focus:outline-none"
-              />
-              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1.5">
-                Default password: <strong className="text-red-600 dark:text-red-500">e27admin2026</strong>
-              </p>
+          {authMode === 'register' && regError && (
+            <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{regError}</span>
             </div>
+          )}
 
-            <button
-              type="submit"
-              className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs tracking-wider uppercase shadow-md shadow-red-600/20 transition-all active:scale-[0.98]"
-            >
-              Sign In to Admin Portal
-            </button>
-          </form>
+          {/* REGISTER FORM */}
+          {authMode === 'register' ? (
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Administrator Email <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. elishasamwel27@gmail.com"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Administrator Full Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Elisha Samwel"
+                  value={regName}
+                  onChange={(e) => setRegName(e.target.value)}
+                  className="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Create Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    placeholder="Min. 6 characters..."
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-600 focus:outline-none pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Confirm Password <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="Re-enter password to confirm..."
+                  value={regConfirmPassword}
+                  onChange={(e) => setRegConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-600 focus:outline-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs tracking-wider uppercase shadow-md shadow-red-600/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Register Administrator Account</span>
+              </button>
+            </form>
+          ) : (
+            /* LOGIN FORM */
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Administrator Email
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
+                  <input
+                    type="email"
+                    required
+                    placeholder="Enter registered email..."
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Enter password..."
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-600 focus:outline-none pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs tracking-wider uppercase shadow-md shadow-red-600/20 transition-all active:scale-[0.98]"
+              >
+                Sign In to Admin Portal
+              </button>
+
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={handleResetOrReRegister}
+                  className="text-[11px] text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
+                >
+                  Need to change or re-register administrator? Click here
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     );
@@ -191,11 +433,22 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
             <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400 border border-red-200 dark:border-red-900">
               Staff Console
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">Kigamboni Branch Operations</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Kijichi, Kigamboni Operations</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight mt-1">
             E27 Central Management Dashboard
           </h1>
+          {adminUser && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>
+                Administrator: <strong className="text-gray-800 dark:text-gray-200">{adminUser.name}</strong> ({adminUser.email})
+              </span>
+              <span className="text-[10px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300 ml-1">
+                {adminUser.role}
+              </span>
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -939,7 +1192,7 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
                 2. Administrator Access Credentials
               </h3>
               <p>
-                - In local/preview mode: Use master password <strong className="text-red-600">e27admin2026</strong> on the Admin tab.<br />
+                - No default password exists. Register your administrator account using your official email directly in the Administrator portal.<br />
                 - In production: Store and authenticate credentials securely via your chosen authentication backend.
               </p>
             </div>

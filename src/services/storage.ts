@@ -9,6 +9,7 @@ import {
   WebsiteSettings,
   ApplicationStatus,
   CommentStatus,
+  AdminUser,
 } from '../types';
 import {
   initialServices,
@@ -29,6 +30,7 @@ const STORAGE_KEYS = {
   NOTIFICATIONS: 'e27_notifications',
   SETTINGS: 'e27_settings',
   ADMIN_AUTH: 'e27_admin_auth',
+  ADMIN_USER: 'e27_admin_user',
   THEME: 'e27_theme',
   LANG: 'e27_lang',
 };
@@ -56,10 +58,12 @@ function safeSet<T>(key: string, value: T): void {
 
 // Ensure initial seed
 export function initializeStorage(): void {
-  const CURRENT_DATA_VERSION = 'v4_kijichi_no_social_links';
+  const CURRENT_DATA_VERSION = 'v5_custom_admin_reg';
   if (localStorage.getItem('e27_data_ver') !== CURRENT_DATA_VERSION) {
     safeSet(STORAGE_KEYS.SERVICES, initialServices);
     safeSet(STORAGE_KEYS.SETTINGS, initialSettings);
+    // Remove any legacy default credentials/auth
+    localStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
     localStorage.setItem('e27_data_ver', CURRENT_DATA_VERSION);
   } else {
     if (!localStorage.getItem(STORAGE_KEYS.SERVICES)) {
@@ -522,13 +526,92 @@ export function updateSettings(settings: WebsiteSettings): void {
 }
 
 // ----------------- AUTHENTICATION -----------------
+export function getAdminUser(): AdminUser | null {
+  return safeParse<AdminUser | null>(STORAGE_KEYS.ADMIN_USER, null);
+}
+
+export function registerAdminUser(
+  email: string,
+  password: string,
+  name: string = 'Administrator'
+): { success: boolean; error?: string; user?: AdminUser } {
+  const cleanEmail = email.trim().toLowerCase();
+  if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+    return { success: false, error: 'Please enter a valid administrator email address.' };
+  }
+  if (!password || password.length < 6) {
+    return { success: false, error: 'Password must be at least 6 characters long.' };
+  }
+
+  const newAdmin: AdminUser = {
+    id: `admin-${Date.now()}`,
+    email: cleanEmail,
+    name: name.trim() || 'Administrator',
+    role: 'Super Administrator',
+    password: password,
+    createdAt: new Date().toISOString(),
+    lastLoginAt: new Date().toISOString(),
+  };
+
+  safeSet(STORAGE_KEYS.ADMIN_USER, newAdmin);
+  localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
+  window.dispatchEvent(new CustomEvent('e27_storage_updated', { detail: { key: STORAGE_KEYS.ADMIN_USER } }));
+  window.dispatchEvent(new CustomEvent('e27_storage_updated', { detail: { key: STORAGE_KEYS.ADMIN_AUTH } }));
+  return { success: true, user: newAdmin };
+}
+
+export function loginAdminUser(
+  email: string,
+  password: string
+): { success: boolean; error?: string; user?: AdminUser } {
+  const admin = getAdminUser();
+  if (!admin) {
+    return {
+      success: false,
+      error: 'No administrator account has been registered yet. Please register your account.',
+    };
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  if (admin.email.toLowerCase() !== cleanEmail) {
+    return {
+      success: false,
+      error: 'Administrator email does not match registered account.',
+    };
+  }
+
+  if (admin.password !== password) {
+    return {
+      success: false,
+      error: 'Incorrect administrator password.',
+    };
+  }
+
+  // Update last login
+  admin.lastLoginAt = new Date().toISOString();
+  safeSet(STORAGE_KEYS.ADMIN_USER, admin);
+  localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
+  window.dispatchEvent(new CustomEvent('e27_storage_updated', { detail: { key: STORAGE_KEYS.ADMIN_AUTH } }));
+  return { success: true, user: admin };
+}
+
+export function resetAdminAccount(): void {
+  localStorage.removeItem(STORAGE_KEYS.ADMIN_USER);
+  localStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
+  window.dispatchEvent(new CustomEvent('e27_storage_updated', { detail: { key: STORAGE_KEYS.ADMIN_USER } }));
+  window.dispatchEvent(new CustomEvent('e27_storage_updated', { detail: { key: STORAGE_KEYS.ADMIN_AUTH } }));
+}
+
 export function isAdminLoggedIn(): boolean {
-  return localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === 'true';
+  const isAuth = localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === 'true';
+  const admin = getAdminUser();
+  return isAuth && admin !== null;
 }
 
 export function adminLogin(secret: string): boolean {
-  // Default master pass for E27 Admin is "e27admin2026" or "admin123"
-  if (secret === 'e27admin2026' || secret === 'admin123' || secret === 'e27') {
+  // Legacy backward-compat: if an admin user exists, verify against their password
+  const admin = getAdminUser();
+  if (admin && admin.password === secret) {
     localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
     window.dispatchEvent(new CustomEvent('e27_storage_updated', { detail: { key: STORAGE_KEYS.ADMIN_AUTH } }));
     return true;

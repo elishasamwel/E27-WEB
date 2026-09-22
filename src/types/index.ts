@@ -156,3 +156,13 @@ export interface WebsiteSettings {
   };
   disclaimer: string;
 }
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  password?: string;
+  createdAt: string;
+  lastLoginAt?: string;
+}
