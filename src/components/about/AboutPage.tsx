@@ -20,62 +20,76 @@ export function AboutPage({ currentLang, onNavigate }: AboutPageProps) {
   const settings = getSettings();
 
   return (
-    <div id="about-page-container" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
-      {/* Header Banner */}
-      <div className="text-center max-w-3xl mx-auto space-y-4">
-        <span className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
-          About
-        </span>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 dark:text-white tracking-tight">
-          {t.about?.title || 'Empowering Tanzania’s Digital Future'}
-        </h1>
-        <p className="text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-          {t.about?.subtitle || 'Bridging the gap between individuals, businesses, and essential online platforms through speed, integrity, and local expertise in Kigamboni, Dar es Salaam.'}
-        </p>
-      </div>
-
-      {/* Prominent Independence Notice */}
-      <div className="p-6 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 max-w-4xl mx-auto flex items-start gap-4">
-        <ShieldCheck className="w-6 h-6 text-red-600 dark:text-red-500 shrink-0 mt-1" />
-        <div className="space-y-1">
-          <h4 className="text-sm font-bold text-gray-900 dark:text-white">
-            Independent Digital Service Consultancy
-          </h4>
-          <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
-            {t.disclaimer.full}
-          </p>
+    <div id="about-page-container" className="space-y-16 pb-16">
+      {/* Header Banner with Photographic Background */}
+      <section className="relative overflow-hidden pt-16 pb-20 sm:pt-28 sm:pb-28 bg-gray-950 text-white border-b border-gray-800">
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <img
+            src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=2000&q=80"
+            alt="Modern Collaborative Workspace"
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover object-center scale-105 filter brightness-[0.28] contrast-[1.15]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/75 to-red-950/35" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-600/15 via-transparent to-black/80" />
         </div>
-      </div>
 
-      {/* Company Story & Location */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-        <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-          <span className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500 block">
-            Who We Are
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl mx-auto space-y-4">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-red-500 bg-red-950/60 border border-red-800/60 px-3 py-1 rounded-full inline-block">
+            About Us
           </span>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Bridging the Gap in Tanzania's Digital Ecosystem
-          </h2>
-          <p>
-            Founded in Kigamboni, Dar es Salaam, <strong>E27</strong> was born out of a desire to eliminate bureaucratic friction and digital complexity for everyday citizens, ambitious entrepreneurs, and expanding enterprises.
-          </p>
-          <p>
-            While Tanzania continues to rapidly modernize its public administrative portals (including RITA e-Huduma, TRA Taxpayer Portal, BRELA ORS, TAUSI for municipal trade licences, and NeST for public procurement), navigating requirements, formats, and technical prerequisites can be time-consuming and challenging.
-          </p>
-          <p>
-            E27 acts as your knowledgeable, dependable bridge. In addition to administrative digital facilitation, our in-house engineering team crafts world-class websites, manages reliable cloud hosting, and secures official Tanzanian .tz domain identities.
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight drop-shadow-sm">
+            {t.about?.title || 'Empowering Tanzania’s Digital Future'}
+          </h1>
+          <p className="text-base text-gray-200 leading-relaxed max-w-2xl mx-auto drop-shadow-sm">
+            Bridging the gap between individuals, businesses, and essential online platforms through speed, integrity, and local expertise in Kijichi, Kigamboni, Dar es Salaam.
           </p>
         </div>
+      </section>
 
-        {/* Highlight Card */}
-        <div className="rounded-3xl bg-gray-950 text-white p-8 border border-gray-800 shadow-xl space-y-6">
-          <div className="flex items-center gap-3">
-            <MapPin className="w-6 h-6 text-red-500" />
-            <div>
-              <h3 className="text-lg font-bold text-white">Based in Kigamboni</h3>
-              <p className="text-xs text-gray-400">{settings.location}</p>
-            </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+        {/* Prominent Independence Notice */}
+        <div className="p-6 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 max-w-4xl mx-auto flex items-start gap-4">
+          <ShieldCheck className="w-6 h-6 text-red-600 dark:text-red-500 shrink-0 mt-1" />
+          <div className="space-y-1">
+            <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+              Independent Digital Service Consultancy
+            </h4>
+            <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+              {t.disclaimer.full}
+            </p>
           </div>
+        </div>
+
+        {/* Company Story & Location */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+          <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+            <span className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500 block">
+              Who We Are
+            </span>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Bridging the Gap in Tanzania's Digital Ecosystem
+            </h2>
+            <p>
+              Founded in Kijichi, Kigamboni, Dar es Salaam, <strong>E27</strong> was born out of a desire to eliminate bureaucratic friction and digital complexity for everyday citizens, ambitious entrepreneurs, and expanding enterprises.
+            </p>
+            <p>
+              While Tanzania continues to rapidly modernize its public administrative portals (including RITA e-Huduma, TRA Taxpayer Portal, BRELA ORS, TAUSI for municipal trade licences, and NeST for public procurement), navigating requirements, formats, and technical prerequisites can be time-consuming and challenging.
+            </p>
+            <p>
+              E27 acts as your knowledgeable, dependable bridge. In addition to administrative digital facilitation, our in-house engineering team crafts world-class websites, manages reliable cloud hosting, and secures official Tanzanian .tz domain identities.
+            </p>
+          </div>
+
+          {/* Highlight Card */}
+          <div className="rounded-3xl bg-gray-950 text-white p-8 border border-gray-800 shadow-xl space-y-6">
+            <div className="flex items-center gap-3">
+              <MapPin className="w-6 h-6 text-red-500" />
+              <div>
+                <h3 className="text-lg font-bold text-white">Based in Kijichi, Kigamboni</h3>
+                <p className="text-xs text-gray-400">{settings.location}</p>
+              </div>
+            </div>
 
           <div className="grid grid-cols-2 gap-4 text-xs pt-2 border-t border-gray-800">
             <div>
@@ -186,6 +200,7 @@ export function AboutPage({ currentLang, onNavigate }: AboutPageProps) {
             </p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

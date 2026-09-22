@@ -56,8 +56,18 @@ function safeSet<T>(key: string, value: T): void {
 
 // Ensure initial seed
 export function initializeStorage(): void {
-  if (!localStorage.getItem(STORAGE_KEYS.SERVICES)) {
+  const CURRENT_DATA_VERSION = 'v4_kijichi_no_social_links';
+  if (localStorage.getItem('e27_data_ver') !== CURRENT_DATA_VERSION) {
     safeSet(STORAGE_KEYS.SERVICES, initialServices);
+    safeSet(STORAGE_KEYS.SETTINGS, initialSettings);
+    localStorage.setItem('e27_data_ver', CURRENT_DATA_VERSION);
+  } else {
+    if (!localStorage.getItem(STORAGE_KEYS.SERVICES)) {
+      safeSet(STORAGE_KEYS.SERVICES, initialServices);
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
+      safeSet(STORAGE_KEYS.SETTINGS, initialSettings);
+    }
   }
   if (!localStorage.getItem(STORAGE_KEYS.BLOG_POSTS)) {
     safeSet(STORAGE_KEYS.BLOG_POSTS, initialBlogPosts);

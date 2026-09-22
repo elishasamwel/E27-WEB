@@ -83,6 +83,8 @@ export interface TranslationSchema {
   };
   actions: {
     applyNow: string;
+    requirements: string;
+    hideRequirements: string;
     learnMore: string;
     viewDetails: string;
     search: string;
@@ -182,7 +184,9 @@ export const translations: Record<Language, TranslationSchema> = {
       web_digital: 'Website & Digital Services',
     },
     actions: {
-      applyNow: 'Apply Now',
+      applyNow: 'Requirements',
+      requirements: 'Requirements',
+      hideRequirements: 'Hide Requirements',
       learnMore: 'Learn More',
       viewDetails: 'View Details',
       search: 'Search',
@@ -280,7 +284,9 @@ export const translations: Record<Language, TranslationSchema> = {
       web_digital: 'Tovuti & Suluhu za Kidijitali',
     },
     actions: {
-      applyNow: 'Omba Sasa',
+      applyNow: 'Mahitaji',
+      requirements: 'Mahitaji',
+      hideRequirements: 'Ficha Mahitaji',
       learnMore: 'Fahamu Zaidi',
       viewDetails: 'Angalia Maelezo',
       search: 'Tafuta',
@@ -378,7 +384,9 @@ export const translations: Record<Language, TranslationSchema> = {
       web_digital: '网站设计与数字化解决方案',
     },
     actions: {
-      applyNow: '立即申请',
+      applyNow: '所需材料 (Requirements)',
+      requirements: '所需材料与要求',
+      hideRequirements: '收起材料',
       learnMore: '了解详情',
       viewDetails: '查看细节',
       search: '搜索',
@@ -476,7 +484,9 @@ export const translations: Record<Language, TranslationSchema> = {
       web_digital: 'Création Web & Solutions Numériques',
     },
     actions: {
-      applyNow: 'Postuler Maintenant',
+      applyNow: 'Prérequis (Requirements)',
+      requirements: 'Prérequis & Documents',
+      hideRequirements: 'Masquer',
       learnMore: 'En Savoir Plus',
       viewDetails: 'Détails du Service',
       search: 'Rechercher',
@@ -574,7 +584,9 @@ export const translations: Record<Language, TranslationSchema> = {
       web_digital: 'Webdesign & Digitale Lösungen',
     },
     actions: {
-      applyNow: 'Jetzt Beantragen',
+      applyNow: 'Voraussetzungen (Requirements)',
+      requirements: 'Voraussetzungen',
+      hideRequirements: 'Ausblenden',
       learnMore: 'Mehr Erfahren',
       viewDetails: 'Details Ansehen',
       search: 'Suchen',

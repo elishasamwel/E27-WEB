@@ -57,7 +57,7 @@ export function Footer({
               Ready to get your services processed?
             </h3>
             <p className="text-sm text-gray-400 max-w-2xl">
-              From birth certificates and TIN registration to custom company websites and .co.tz domains — our team in Kigamboni is ready to help.
+              From birth certificates and TIN registration to custom company websites and .co.tz domains — our team in Kijichi, Kigamboni is ready to help.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -112,53 +112,32 @@ export function Footer({
               {t.footer.description}
             </p>
 
-            {/* Social Media Links */}
-            <div className="flex items-center gap-3 pt-2">
-              <a
-                href={settings.socials.facebook}
-                target="_blank"
-                rel="noreferrer"
-                className="w-9 h-9 rounded-lg bg-gray-900 border border-gray-800 hover:bg-red-600 text-gray-300 hover:text-white flex items-center justify-center transition-colors"
+            {/* Social Media Icons (Without links) */}
+            <div className="flex items-center gap-2.5 pt-2">
+              <span
+                className="w-9 h-9 rounded-lg bg-gray-900 border border-gray-800 text-gray-400 flex items-center justify-center cursor-default select-none"
                 aria-label="Facebook"
               >
                 <span className="font-bold text-sm">fb</span>
-              </a>
-              <a
-                href={settings.socials.instagram}
-                target="_blank"
-                rel="noreferrer"
-                className="w-9 h-9 rounded-lg bg-gray-900 border border-gray-800 hover:bg-red-600 text-gray-300 hover:text-white flex items-center justify-center transition-colors"
+              </span>
+              <span
+                className="w-9 h-9 rounded-lg bg-gray-900 border border-gray-800 text-gray-400 flex items-center justify-center cursor-default select-none"
                 aria-label="Instagram"
               >
                 <span className="font-bold text-sm">ig</span>
-              </a>
-              <a
-                href={settings.socials.twitter}
-                target="_blank"
-                rel="noreferrer"
-                className="w-9 h-9 rounded-lg bg-gray-900 border border-gray-800 hover:bg-red-600 text-gray-300 hover:text-white flex items-center justify-center transition-colors"
+              </span>
+              <span
+                className="w-9 h-9 rounded-lg bg-gray-900 border border-gray-800 text-gray-400 flex items-center justify-center cursor-default select-none"
                 aria-label="X / Twitter"
               >
                 <span className="font-bold text-sm">x</span>
-              </a>
-              <a
-                href={settings.socials.linkedin}
-                target="_blank"
-                rel="noreferrer"
-                className="w-9 h-9 rounded-lg bg-gray-900 border border-gray-800 hover:bg-red-600 text-gray-300 hover:text-white flex items-center justify-center transition-colors"
+              </span>
+              <span
+                className="w-9 h-9 rounded-lg bg-gray-900 border border-gray-800 text-gray-400 flex items-center justify-center cursor-default select-none"
                 aria-label="LinkedIn"
               >
                 <span className="font-bold text-sm">in</span>
-              </a>
-              <a
-                href={`https://wa.me/${settings.whatsApp.replace(/[^0-9]/g, '')}`}
-                target="_blank"
-                rel="noreferrer"
-                className="w-9 h-9 rounded-lg bg-gray-900 border border-gray-800 hover:bg-red-600 text-gray-300 hover:text-white flex items-center justify-center transition-colors"
-                aria-label="WhatsApp Community"
-              >
-                <MessageCircle className="w-4 h-4 text-white" />
-              </a>
+              </span>
             </div>
           </div>
 

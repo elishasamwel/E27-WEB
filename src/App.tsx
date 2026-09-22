@@ -97,7 +97,7 @@ export default function App() {
             currentLang={currentLang}
             onNavigate={navigateTo}
             onSelectServiceToApply={(srv) => setServiceToApply(srv)}
-            onSelectServiceToView={(srv) => setServiceToApply(srv)}
+            onSelectServiceToView={(srv) => setServiceToView(srv)}
             onSelectPost={() => {}}
           />
         );
@@ -110,7 +110,7 @@ export default function App() {
           <ServicesPage
             currentLang={currentLang}
             onApply={(srv) => setServiceToApply(srv)}
-            onViewDetails={(srv) => setServiceToApply(srv)}
+            onViewDetails={(srv) => setServiceToView(srv)}
           />
         );
 

@@ -24,6 +24,7 @@ import {
 import { ServiceItem, Language, ServiceCategory } from '../../types';
 import { translations } from '../../translations';
 import { getServices, getSettings } from '../../services/storage';
+import { ServiceCard } from '../services/ServiceCard';
 
 interface HomePageProps {
   currentLang: Language;
@@ -45,6 +46,7 @@ export function HomePage({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
 
   // Filter services by category and search
   const filteredServices = useMemo(() => {
@@ -75,7 +77,7 @@ export function HomePage({
   const faqs = [
     {
       q: 'Is E27 an official government agency?',
-      a: 'No. E27 is an independent private digital service and technology consultancy based in Kigamboni, Dar es Salaam. We assist citizens, entrepreneurs, and firms with professional documentation, online portal submissions, and IT solutions. Official legal certificates and licences are evaluated and issued by the respective state authorities (RITA, TRA, BRELA, TAUSI, etc.).',
+      a: 'No. E27 is an independent private digital service and technology consultancy based in Kijichi, Kigamboni, Dar es Salaam. We assist citizens, entrepreneurs, and firms with professional documentation, online portal submissions, and IT solutions. Official legal certificates and licences are evaluated and issued by the respective state authorities (RITA, TRA, BRELA, TAUSI, etc.).',
     },
     {
       q: 'How fast can E27 process my application?',
@@ -98,16 +100,29 @@ export function HomePage({
   return (
     <div id="home-page-container" className="space-y-16 sm:space-y-24 pb-16">
       {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-20 bg-gradient-to-b from-red-50/40 via-white to-gray-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 border-b border-gray-200/80 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden pt-16 pb-20 sm:pt-28 sm:pb-28 bg-gray-950 text-white border-b border-gray-800">
+        {/* Background Image with sophisticated dark and red gradient overlays */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <img
+            src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2000&q=80"
+            alt="Modern digital skyline"
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover object-center scale-105 filter brightness-[0.32] contrast-[1.1] transform duration-1000 ease-out"
+          />
+          {/* Subtle brand red and dark vignettes */}
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/70 to-red-950/30" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-600/15 via-transparent to-black/80" />
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-4xl mx-auto space-y-5">
             {/* Main Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-gray-900 dark:text-white tracking-tight leading-[1.15]">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.15] drop-shadow-sm">
               {t.hero.title || t.hero.headline}
             </h1>
 
             {/* Subheadline */}
-            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg text-gray-200 max-w-2xl mx-auto leading-relaxed drop-shadow-sm">
               {t.hero.subtitle || t.hero.subheadline}
             </p>
           </div>
@@ -135,35 +150,23 @@ export function HomePage({
           </button>
         </div>
 
-        {/* Services Grid - Only Card, Service Name, and Centered Apply Button */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+        {/* Services Grid with Requirements preview on each card */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2 items-start">
           {services
             .filter((s) => s.active)
-            .map((service) => {
-              return (
-                <div
-                  key={service.id}
-                  id={`service-card-${service.code}`}
-                  className="group relative rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col justify-between hover:border-red-500 dark:hover:border-red-500 text-center"
-                >
-                  <div className="space-y-3 py-2">
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors">
-                      {service.name[currentLang] || service.name.en}
-                    </h3>
-                  </div>
-
-                  <div className="pt-5 mt-4 border-t border-gray-100 dark:border-gray-800 flex justify-center">
-                    <button
-                      onClick={() => onSelectServiceToApply(service)}
-                      className="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold tracking-wide shadow-md shadow-red-600/20 transition-all inline-flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                      <span>{t.actions.applyNow}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            .map((service) => (
+              <ServiceCard
+                key={service.id}
+                service={service}
+                currentLang={currentLang}
+                isExpanded={expandedServiceId === service.id}
+                onToggleRequirements={() =>
+                  setExpandedServiceId((prev) => (prev === service.id ? null : service.id))
+                }
+                onSelectServiceToApply={onSelectServiceToApply}
+                onOpenModal={onSelectServiceToView}
+              />
+            ))}
         </div>
       </section>
 

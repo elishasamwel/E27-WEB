@@ -121,20 +121,43 @@ export function ServiceDetailModal({
           </div>
 
           {/* Requirements Checklist */}
-          {service.requirements && (
-            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5">
+          {((service.requirementGroups && (service.requirementGroups[currentLang] || service.requirementGroups.en || service.requirementGroups.sw)) || service.requirements) && (
+            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400 flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-red-600" />
-                <span>Prerequisites & Requirements</span>
+                <span>{currentLang === 'sw' ? 'Nyaraka na Taarifa Zinazohitajika' : 'Prerequisites & Requirements'}</span>
               </h4>
-              <ul className="space-y-2">
-                {(service.requirements?.[currentLang] || service.requirements?.en || []).map((req, i) => (
-                  <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-600 mt-1.5 shrink-0" />
-                    <span>{req}</span>
-                  </li>
-                ))}
-              </ul>
+
+              {service.requirementGroups && (service.requirementGroups[currentLang] || service.requirementGroups.en || service.requirementGroups.sw) ? (
+                <div className="space-y-3 pt-1">
+                  {(service.requirementGroups[currentLang] || service.requirementGroups.en || service.requirementGroups.sw || []).map((grp, gIdx) => (
+                    <div key={gIdx} className="space-y-1.5">
+                      {grp.title && (
+                        <div className="text-xs font-bold text-gray-900 dark:text-gray-100 bg-gray-200/70 dark:bg-gray-700/60 px-2.5 py-1 rounded-md">
+                          {grp.title}
+                        </div>
+                      )}
+                      <ul className="space-y-1 pl-1">
+                        {grp.items.map((item, itemIdx) => (
+                          <li key={itemIdx} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-600 mt-1.5 shrink-0" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <ul className="space-y-2">
+                  {(service.requirements?.[currentLang] || service.requirements?.en || service.requirements?.sw || []).map((req, i) => (
+                    <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-600 mt-1.5 shrink-0" />
+                      <span>{req}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
 

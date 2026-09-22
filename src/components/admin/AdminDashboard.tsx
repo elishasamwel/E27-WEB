@@ -59,6 +59,7 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
 
   // Settings Feedback
   const [settingsSavedToast, setSettingsSavedToast] = useState(false);
+  const [appUpdatedToast, setAppUpdatedToast] = useState(false);
 
   useEffect(() => {
     const handleStorageUpdate = () => {
@@ -116,7 +117,8 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
     setApplications(updatedList);
     const updatedCurrent = updatedList.find((a) => a.id === selectedApp.id) || null;
     setSelectedApp(updatedCurrent);
-    alert(`Application ${selectedApp.id} status successfully updated to "${newStatus}".`);
+    setAppUpdatedToast(true);
+    setTimeout(() => setAppUpdatedToast(false), 4000);
   };
 
   const handleSaveSettings = (e: React.FormEvent) => {
@@ -387,6 +389,13 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
 
                 <StatusBadge status={selectedApp.status} size="lg" />
               </div>
+
+              {appUpdatedToast && (
+                <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>Application status and notes successfully updated and saved!</span>
+                </div>
+              )}
 
               {/* Status Update & Admin Notes Control Box */}
               <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 space-y-4">

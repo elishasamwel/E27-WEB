@@ -5,16 +5,22 @@ export type ServiceCategory =
   | 'applications'
   | 'web_digital';
 
+export interface RequirementGroup {
+  title?: string;
+  items: string[];
+}
+
 export interface ServiceItem {
   id: string;
   category: ServiceCategory;
-  code: string; // e.g., 'rita_birth', 'tra_tin', 'brela_comp'
+  code: string; // e.g., 'rita_birth', 'tra_tin', 'brela_company'
   name: Record<Language, string>;
   shortDesc: Record<Language, string>;
   fullDesc: Record<Language, string>;
   icon: string; // lucide icon identifier
   estimatedTime: string;
   requirements: Record<Language, string[]>;
+  requirementGroups?: Record<Language, RequirementGroup[]>;
   popular?: boolean;
   active: boolean;
 }

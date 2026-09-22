@@ -1,12 +1,9 @@
 import { useState, useMemo } from 'react';
-import {
-  Search,
-  ArrowRight,
-  Info
-} from 'lucide-react';
+import { Search, Info } from 'lucide-react';
 import { ServiceItem, Language } from '../../types';
 import { translations } from '../../translations';
 import { getServices } from '../../services/storage';
+import { ServiceCard } from './ServiceCard';
 
 interface ServicesPageProps {
   currentLang: Language;
@@ -14,11 +11,12 @@ interface ServicesPageProps {
   onViewDetails: (service: ServiceItem) => void;
 }
 
-export function ServicesPage({ currentLang, onApply }: ServicesPageProps) {
+export function ServicesPage({ currentLang, onApply, onViewDetails }: ServicesPageProps) {
   const t = translations[currentLang];
   const services = getServices();
 
   const [search, setSearch] = useState('');
+  const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return services.filter((s) => {
@@ -31,66 +29,71 @@ export function ServicesPage({ currentLang, onApply }: ServicesPageProps) {
   }, [services, search, currentLang]);
 
   return (
-    <div id="services-page-container" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
-      {/* Page Header */}
-      <div className="text-center max-w-3xl mx-auto space-y-4">
-        <span className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-500">
-          Our Services Catalog
-        </span>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 dark:text-white tracking-tight">
-          {t.services?.title || 'Professional Services'}
-        </h1>
-        <p className="text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-          {t.services?.subtitle || 'Official Tanzanian government systems, commercial registries, and web technology.'}
-        </p>
+    <div id="services-page-container" className="space-y-12 pb-16">
+      {/* Page Header with Photographic Background */}
+      <section className="relative overflow-hidden pt-16 pb-20 sm:pt-28 sm:pb-28 bg-gray-950 text-white border-b border-gray-800">
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <img
+            src="https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=2000&q=80"
+            alt="Business Documents and Strategy"
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover object-center scale-105 filter brightness-[0.28] contrast-[1.15]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/75 to-red-950/35" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-600/15 via-transparent to-black/80" />
+        </div>
 
-        {/* Search Bar */}
-        <div className="max-w-xl mx-auto pt-2">
-          <div className="relative flex items-center shadow-sm rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-2">
-            <Search className="w-5 h-5 text-gray-400 ml-2.5 shrink-0" />
-            <input
-              type="text"
-              placeholder="Search by service name..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-transparent text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="text-xs text-gray-400 hover:text-gray-600 px-2"
-              >
-                Clear
-              </button>
-            )}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl mx-auto space-y-4">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-red-500 bg-red-950/60 border border-red-800/60 px-3 py-1 rounded-full inline-block">
+            Our Services Catalog
+          </span>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight drop-shadow-sm">
+            {t.services?.title || 'Professional Services'}
+          </h1>
+          <p className="text-base text-gray-200 leading-relaxed drop-shadow-sm">
+            {t.services?.subtitle || 'Official Tanzanian government systems, commercial registries, and web technology.'}
+          </p>
+
+          {/* Search Bar */}
+          <div className="max-w-xl mx-auto pt-4">
+            <div className="relative flex items-center shadow-lg rounded-2xl border border-gray-700/80 bg-gray-900/90 backdrop-blur-md p-2">
+              <Search className="w-5 h-5 text-gray-400 ml-2.5 shrink-0" />
+              <input
+                type="text"
+                placeholder="Search by service name or keyword..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-transparent text-white placeholder-gray-400 focus:outline-none"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="text-xs text-gray-400 hover:text-white px-2"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Services Grid - Only Card, Service Name, and Centered Apply Button */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+
+      {/* Services Grid - Cards with Requirements Preview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
         {filtered.map((service) => (
-          <div
+          <ServiceCard
             key={service.id}
-            id={`service-catalog-${service.code}`}
-            className="group rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col justify-between hover:border-red-500 dark:hover:border-red-500 text-center"
-          >
-            <div className="space-y-3 py-2">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors">
-                {service.name[currentLang] || service.name.en}
-              </h3>
-            </div>
-
-            <div className="pt-5 mt-4 border-t border-gray-100 dark:border-gray-800 flex justify-center">
-              <button
-                onClick={() => onApply(service)}
-                className="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold tracking-wide shadow-md shadow-red-600/20 transition-all inline-flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <span>{t.actions.applyNow}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+            service={service}
+            currentLang={currentLang}
+            isExpanded={expandedServiceId === service.id}
+            onToggleRequirements={() =>
+              setExpandedServiceId((prev) => (prev === service.id ? null : service.id))
+            }
+            onSelectServiceToApply={onApply}
+            onOpenModal={onViewDetails}
+          />
         ))}
       </div>
 
@@ -108,6 +111,7 @@ export function ServicesPage({ currentLang, onApply }: ServicesPageProps) {
           </button>
         </div>
       )}
+      </div>
     </div>
   );
 }

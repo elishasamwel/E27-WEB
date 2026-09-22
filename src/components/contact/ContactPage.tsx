@@ -79,7 +79,7 @@ export function ContactPage({ currentLang }: ContactPageProps) {
           {t.contact?.title || 'Get in Touch with E27'}
         </h1>
         <p className="text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-          {t.contact?.subtitle || 'Visit our office in Kigamboni, call, WhatsApp, or send us a message online.'}
+          {t.contact?.subtitle || 'Visit our office in Kijichi, Kigamboni, call, WhatsApp, or send us a message online.'}
         </p>
       </div>
 
@@ -92,7 +92,7 @@ export function ContactPage({ currentLang }: ContactPageProps) {
                 <MapPin className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Kigamboni Office</h3>
+                <h3 className="text-lg font-bold text-white">Kijichi Office</h3>
                 <p className="text-xs text-gray-400">{settings.location}</p>
               </div>
             </div>
