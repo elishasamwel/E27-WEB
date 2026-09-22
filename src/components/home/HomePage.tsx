@@ -19,7 +19,8 @@ import {
   Laptop,
   Globe,
   Building,
-  FileText
+  FileText,
+  UserCheck
 } from 'lucide-react';
 import { ServiceItem, Language, ServiceCategory } from '../../types';
 import { translations } from '../../translations';
@@ -198,19 +199,19 @@ export function HomePage({
             <div className="p-6 rounded-2xl bg-gray-800/80 border border-gray-700/80 relative">
               <span className="text-3xl font-black text-red-500/30 absolute top-4 right-4">02</span>
               <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-500/40 text-red-400 flex items-center justify-center mb-4">
-                <CheckCircle className="w-5 h-5" />
+                <MessageCircle className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-bold text-white mb-2">{t.howItWorks?.step2Title || 'Submit Details'}</h3>
-              <p className="text-xs text-gray-400 leading-relaxed">{t.howItWorks?.step2Desc || 'Fill our straightforward form and upload required supporting documents securely.'}</p>
+              <h3 className="text-base font-bold text-white mb-2">{t.howItWorks?.step2Title || 'Submit Details (by contacting us)'}</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">{t.howItWorks?.step2Desc || 'Contact us directly via WhatsApp or phone with your information and documents — no form filling required.'}</p>
             </div>
 
             <div className="p-6 rounded-2xl bg-gray-800/80 border border-gray-700/80 relative">
               <span className="text-3xl font-black text-red-500/30 absolute top-4 right-4">03</span>
               <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-500/40 text-red-400 flex items-center justify-center mb-4">
-                <Zap className="w-5 h-5" />
+                <UserCheck className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-bold text-white mb-2">{t.howItWorks?.step3Title || 'Review'}</h3>
-              <p className="text-xs text-gray-400 leading-relaxed">{t.howItWorks?.step3Desc || 'Our specialists in Kigamboni review and lodge your documents through official systems.'}</p>
+              <h3 className="text-base font-bold text-white mb-2">{t.howItWorks?.step3Title || 'Review (by contacting us)'}</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">{t.howItWorks?.step3Desc || 'We review and verify your details together via direct consultation before lodging with official systems.'}</p>
             </div>
 
             <div className="p-6 rounded-2xl bg-gray-800/80 border border-gray-700/80 relative">
@@ -219,7 +220,7 @@ export function HomePage({
                 <Award className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-white mb-2">{t.howItWorks?.step4Title || 'Get Results'}</h3>
-              <p className="text-xs text-gray-400 leading-relaxed">{t.howItWorks?.step4Desc || 'Track status and receive your processed certificate, TIN, or deployed website.'}</p>
+              <p className="text-xs text-gray-400 leading-relaxed">{t.howItWorks?.step4Desc || 'Receive your processed certificate, TIN, registration, or completed digital project directly.'}</p>
             </div>
           </div>
         </div>
