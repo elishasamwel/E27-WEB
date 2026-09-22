@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Language } from '../../types';
 import { translations } from '../../translations';
-import { getSettings } from '../../services/storage';
+import { getSettings, getWhatsAppCleanNumber } from '../../services/storage';
 
 interface FooterProps {
   currentLang: Language;
@@ -62,7 +62,7 @@ export function Footer({
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <a
-              href={`https://wa.me/${settings.whatsApp.replace(/[^0-9]/g, '')}?text=Hello,%20I%20need%20assistance%20with%20online%20services`}
+              href={`https://wa.me/${getWhatsAppCleanNumber(settings.whatsApp)}?text=Hello,%20I%20need%20assistance%20with%20online%20services`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-700 text-white font-semibold text-sm shadow-md transition-all duration-150"
@@ -205,7 +205,7 @@ export function Footer({
               <div className="flex items-center gap-2.5">
                 <MessageCircle className="w-4 h-4 text-red-500 shrink-0" />
                 <a
-                  href={`https://wa.me/${settings.whatsApp.replace(/[^0-9]/g, '')}`}
+                  href={`https://wa.me/${getWhatsAppCleanNumber(settings.whatsApp)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-red-400 font-medium"

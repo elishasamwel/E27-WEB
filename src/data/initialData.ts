@@ -1616,8 +1616,8 @@ export const initialCustomers: CustomerProfile[] = [
 export const initialSettings: WebsiteSettings = {
   brandName: 'E27',
   tagline: 'Simplifying Your Digital World.',
-  phone: '0714530815',
-  whatsApp: '0714530815',
+  phone: '+255 714 530 815',
+  whatsApp: '+255714530815',
   email: 'elishasamwel27@gmail.com',
   supportEmail: 'elishasamwel27@gmail.com',
   location: 'Kijichi, Kigamboni, Dar es Salaam, Tanzania',

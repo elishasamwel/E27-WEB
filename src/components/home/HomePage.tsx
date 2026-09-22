@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { ServiceItem, Language, ServiceCategory } from '../../types';
 import { translations } from '../../translations';
-import { getServices, getSettings } from '../../services/storage';
+import { getServices, getSettings, getWhatsAppCleanNumber } from '../../services/storage';
 import { ServiceCard } from '../services/ServiceCard';
 
 interface HomePageProps {
@@ -348,7 +348,7 @@ export function HomePage({
               Contact & Directions
             </button>
             <a
-              href={`https://wa.me/${settings.whatsApp.replace(/[^0-9]/g, '')}`}
+              href={`https://wa.me/${getWhatsAppCleanNumber(settings.whatsApp)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gray-900/80 hover:bg-gray-900 border border-white/20 text-white font-bold text-xs transition-colors shadow-lg flex items-center justify-center gap-2"

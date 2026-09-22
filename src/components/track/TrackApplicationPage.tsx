@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { ServiceApplication, ApplicationStatus, Language } from '../../types';
 import { translations } from '../../translations';
-import { getApplicationById, getSettings } from '../../services/storage';
+import { getApplicationById, getSettings, getWhatsAppCleanNumber } from '../../services/storage';
 import { StatusBadge } from '../common/StatusBadge';
 
 interface TrackApplicationPageProps {
@@ -341,7 +341,7 @@ export function TrackApplicationPage({
               Have questions regarding this reference? Our support desk in Kigamboni is available on WhatsApp.
             </p>
             <a
-              href={`https://wa.me/${settings.whatsApp.replace(/[^0-9]/g, '')}?text=Hello%20E27,%20I%20am%20inquiring%20about%20my%20application%20reference%20${searchedApp.id}`}
+              href={`https://wa.me/${getWhatsAppCleanNumber(settings.whatsApp)}?text=Hello%20E27,%20I%20am%20inquiring%20about%20my%20application%20reference%20${searchedApp.id}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-colors whitespace-nowrap"

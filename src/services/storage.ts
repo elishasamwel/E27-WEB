@@ -58,12 +58,19 @@ function safeSet<T>(key: string, value: T): void {
 
 // Ensure initial seed
 export function initializeStorage(): void {
-  const CURRENT_DATA_VERSION = 'v5_custom_admin_reg';
+  const CURRENT_DATA_VERSION = 'v6_whatsapp_country_code';
   if (localStorage.getItem('e27_data_ver') !== CURRENT_DATA_VERSION) {
     safeSet(STORAGE_KEYS.SERVICES, initialServices);
-    safeSet(STORAGE_KEYS.SETTINGS, initialSettings);
-    // Remove any legacy default credentials/auth
-    localStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
+    const existingSettings = safeParse<WebsiteSettings | null>(STORAGE_KEYS.SETTINGS, null);
+    if (existingSettings) {
+      safeSet(STORAGE_KEYS.SETTINGS, {
+        ...existingSettings,
+        whatsApp: '+255714530815',
+        phone: existingSettings.phone === '0714530815' ? '+255 714 530 815' : existingSettings.phone,
+      });
+    } else {
+      safeSet(STORAGE_KEYS.SETTINGS, initialSettings);
+    }
     localStorage.setItem('e27_data_ver', CURRENT_DATA_VERSION);
   } else {
     if (!localStorage.getItem(STORAGE_KEYS.SERVICES)) {
@@ -523,6 +530,17 @@ export function getSettings(): WebsiteSettings {
 
 export function updateSettings(settings: WebsiteSettings): void {
   safeSet(STORAGE_KEYS.SETTINGS, settings);
+}
+
+export function getWhatsAppCleanNumber(num?: string): string {
+  const raw = num || getSettings().whatsApp || '+255714530815';
+  let cleaned = raw.replace(/[^0-9]/g, '');
+  if (cleaned.startsWith('0')) {
+    cleaned = '255' + cleaned.slice(1);
+  } else if (!cleaned.startsWith('255') && cleaned.length === 9) {
+    cleaned = '255' + cleaned;
+  }
+  return cleaned || '255714530815';
 }
 
 // ----------------- AUTHENTICATION -----------------

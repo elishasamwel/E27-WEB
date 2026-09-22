@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Language, ServiceItem, ServiceApplication } from './types';
-import { getServices, getSettings } from './services/storage';
+import { getServices, getSettings, getWhatsAppCleanNumber } from './services/storage';
 import { Header } from './components/common/Header';
 import { Footer } from './components/common/Footer';
 import { HomePage } from './components/home/HomePage';
@@ -172,7 +172,7 @@ export default function App() {
       {/* Floating Action Button: Quick WhatsApp Assistance */}
       <aside aria-label="Quick WhatsApp Consultation" className="fixed bottom-6 right-6 z-40">
         <a
-          href={`https://wa.me/${settings.whatsApp.replace(/[^0-9]/g, '')}?text=Hello,%20I%20need%20quick%20assistance%20with%20online%20services.`}
+          href={`https://wa.me/${getWhatsAppCleanNumber(settings.whatsApp)}?text=Hello,%20I%20need%20quick%20assistance%20with%20online%20services.`}
           target="_blank"
           rel="noopener noreferrer"
           className="group flex items-center gap-2 p-3 sm:px-4 sm:py-3 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-2xl shadow-red-600/40 hover:scale-105 transition-all duration-200"

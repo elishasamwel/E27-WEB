@@ -1037,14 +1037,18 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  WhatsApp Support Number
+                  WhatsApp Support Number (with Country Code)
                 </label>
                 <input
                   type="text"
+                  placeholder="+255714530815"
                   value={settings.whatsApp}
                   onChange={(e) => setSettings({ ...settings, whatsApp: e.target.value })}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono focus:ring-2 focus:ring-red-600 focus:outline-none"
                 />
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                  Format: Include country code (e.g. +255714530815)
+                </p>
               </div>
 
               <div>

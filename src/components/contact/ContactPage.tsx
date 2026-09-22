@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Language } from '../../types';
 import { translations } from '../../translations';
-import { getSettings, addContactMessage } from '../../services/storage';
+import { getSettings, addContactMessage, getWhatsAppCleanNumber } from '../../services/storage';
 
 interface ContactPageProps {
   currentLang: Language;
@@ -113,7 +113,7 @@ export function ContactPage({ currentLang }: ContactPageProps) {
                 <div>
                   <span className="text-gray-400 block">Direct WhatsApp Desk</span>
                   <a
-                    href={`https://wa.me/${settings.whatsApp.replace(/[^0-9]/g, '')}`}
+                    href={`https://wa.me/${getWhatsAppCleanNumber(settings.whatsApp)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="font-semibold text-white hover:text-red-400 hover:underline"
@@ -144,7 +144,7 @@ export function ContactPage({ currentLang }: ContactPageProps) {
 
             <div className="pt-2 flex justify-center">
               <a
-                href={`https://wa.me/${settings.whatsApp.replace(/[^0-9]/g, '')}?text=Hello%20E27,%20I%20am%20reaching%20out%20via%20your%20website%20contact%20page.`}
+                href={`https://wa.me/${getWhatsAppCleanNumber(settings.whatsApp)}?text=Hello%20E27,%20I%20am%20reaching%20out%20via%20your%20website%20contact%20page.`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs tracking-wider uppercase transition-all shadow-md shadow-red-600/20"
