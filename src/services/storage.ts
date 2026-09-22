@@ -526,6 +526,8 @@ export function updateSettings(settings: WebsiteSettings): void {
 }
 
 // ----------------- AUTHENTICATION -----------------
+export const AUTHORIZED_ADMIN_EMAIL = 'elishasamwel27@gmail.com';
+
 export function getAdminUser(): AdminUser | null {
   return safeParse<AdminUser | null>(STORAGE_KEYS.ADMIN_USER, null);
 }
@@ -533,9 +535,18 @@ export function getAdminUser(): AdminUser | null {
 export function registerAdminUser(
   email: string,
   password: string,
-  name: string = 'Administrator'
+  name: string = 'Elisha Samwel'
 ): { success: boolean; error?: string; user?: AdminUser } {
   const cleanEmail = email.trim().toLowerCase();
+  
+  // Strictly enforce only elishasamwel27@gmail.com
+  if (cleanEmail !== AUTHORIZED_ADMIN_EMAIL.toLowerCase()) {
+    return {
+      success: false,
+      error: `Access Denied: Only ${AUTHORIZED_ADMIN_EMAIL} is authorized to register as administrator.`
+    };
+  }
+
   if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
     return { success: false, error: 'Please enter a valid administrator email address.' };
   }
@@ -546,7 +557,7 @@ export function registerAdminUser(
   const newAdmin: AdminUser = {
     id: `admin-${Date.now()}`,
     email: cleanEmail,
-    name: name.trim() || 'Administrator',
+    name: name.trim() || 'Elisha Samwel',
     role: 'Super Administrator',
     password: password,
     createdAt: new Date().toISOString(),

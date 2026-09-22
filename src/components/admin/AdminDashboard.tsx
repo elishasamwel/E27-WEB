@@ -39,6 +39,7 @@ import {
   loginAdminUser,
   logoutAdmin,
   resetAdminAccount,
+  AUTHORIZED_ADMIN_EMAIL,
 } from '../../services/storage';
 import { StatusBadge } from '../common/StatusBadge';
 
@@ -61,9 +62,9 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
-  // Register form state
-  const [regEmail, setRegEmail] = useState('');
-  const [regName, setRegName] = useState('');
+  // Register form state (restricted exclusively to AUTHORIZED_ADMIN_EMAIL)
+  const [regEmail, setRegEmail] = useState(AUTHORIZED_ADMIN_EMAIL);
+  const [regName, setRegName] = useState('Elisha Samwel');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [regError, setRegError] = useState('');
@@ -117,10 +118,13 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     setRegError('');
-    if (!regEmail.trim()) {
-      setRegError('Please provide a valid administrator email address.');
+    
+    // Strict email check
+    if (regEmail.trim().toLowerCase() !== AUTHORIZED_ADMIN_EMAIL.toLowerCase()) {
+      setRegError(`Access Denied: Only ${AUTHORIZED_ADMIN_EMAIL} is authorized to register as administrator.`);
       return;
     }
+
     if (regPassword.length < 6) {
       setRegError('Password must be at least 6 characters long.');
       return;
@@ -151,15 +155,15 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
   const handleResetOrReRegister = () => {
     if (
       window.confirm(
-        'Are you sure you want to reset or re-register the administrator account? You will create new administrator credentials.'
+        'Are you sure you want to reset or re-register the administrator account? Only elishasamwel27@gmail.com will be permitted to register.'
       )
     ) {
       resetAdminAccount();
       setAdminUser(null);
       setIsAuthenticated(false);
       setAuthMode('register');
-      setRegEmail('');
-      setRegName('');
+      setRegEmail(AUTHORIZED_ADMIN_EMAIL);
+      setRegName('Elisha Samwel');
       setRegPassword('');
       setRegConfirmPassword('');
       setLoginError('');
@@ -221,10 +225,20 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {authMode === 'register'
-                ? 'Register your administrator account using your email. There is no default password.'
+                ? 'Only elishasamwel27@gmail.com is authorized to register this administrator account.'
                 : 'Sign in with your registered administrator email and password.'}
             </p>
           </div>
+
+          {/* Security Notice for Registration */}
+          {authMode === 'register' && (
+            <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2.5">
+              <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>
+                <strong>Strict Policy:</strong> Only <strong>{AUTHORIZED_ADMIN_EMAIL}</strong> is permitted to register this admin account.
+              </span>
+            </div>
+          )}
 
           {/* Toggle between Login and Register if an admin already exists */}
           {adminUser && (
@@ -289,12 +303,15 @@ export function AdminDashboard({ onNavigateHome }: AdminDashboardProps) {
                   <input
                     type="email"
                     required
-                    placeholder="e.g. elishasamwel27@gmail.com"
+                    placeholder="elishasamwel27@gmail.com"
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-600 focus:outline-none"
                   />
                 </div>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                  Permitted email: <span className="font-mono font-semibold text-red-600 dark:text-red-400">{AUTHORIZED_ADMIN_EMAIL}</span>
+                </p>
               </div>
 
               <div>
